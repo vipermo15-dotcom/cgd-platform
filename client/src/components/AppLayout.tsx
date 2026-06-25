@@ -35,6 +35,7 @@ import {
   PieChart,
   Trophy,
   Target,
+  PencilLine,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -57,6 +58,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "AI 자기소개서", href: "/student/cover-letter", icon: <FileText size={18} /> },
         { label: "채용공고", href: "/student/jobs", icon: <Briefcase size={18} /> },
         { label: "희망기업 매칭", href: "/student/job-matching", icon: <Target size={18} /> },
+        { label: "채용공고 첨삭", href: "/student/job-coaching", icon: <PencilLine size={18} /> },
         { label: "지원 현황", href: "/student/applications", icon: <ClipboardList size={18} /> },
         { label: "서류 등록 센터", href: "/student/documents", icon: <FolderCheck size={18} /> },
         { label: "진로 진행 현황", href: "/student/career-progress", icon: <TrendingUp size={18} /> },
@@ -68,6 +70,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "대시보드", href: "/professor", icon: <LayoutDashboard size={18} /> },
         { label: "학생 관리", href: "/professor/students", icon: <Users size={18} /> },
         { label: "서류 검토", href: "/professor/documents", icon: <FolderCheck size={18} /> },
+        { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
         { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
         { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
         { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
@@ -85,6 +88,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "대시보드", href: "/training", icon: <LayoutDashboard size={18} /> },
         { label: "협력기업 관리", href: "/training/companies", icon: <Building2 size={18} /> },
         { label: "AI 매칭", href: "/training/matching", icon: <Bot size={18} /> },
+        { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
       ];
     case "admin":
@@ -92,6 +96,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "대시보드", href: "/admin", icon: <LayoutDashboard size={18} /> },
         { label: "회원 관리", href: "/admin/users", icon: <Users size={18} /> },
         { label: "공고 승인", href: "/admin/postings", icon: <CheckSquare size={18} /> },
+        { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
         { label: "AI 로그", href: "/admin/ai-logs", icon: <Activity size={18} /> },
         { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
         { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },

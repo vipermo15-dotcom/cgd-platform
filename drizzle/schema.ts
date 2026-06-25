@@ -655,3 +655,33 @@ export const talentPoolConsents = mysqlTable("talent_pool_consents", {
 });
 export type TalentPoolConsent = typeof talentPoolConsents.$inferSelect;
 export type InsertTalentPoolConsent = typeof talentPoolConsents.$inferInsert;
+
+// ─── 채용공고 첨삭 요청 ────────────────────────────────────────────────────────
+// 교육생이 희망 채용공고를 올려 멘토(학과장)/관리자/공동훈련센터에게 맞춤 첨삭을 받는다.
+export const jobCoachingRequests = mysqlTable("job_coaching_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  studentUserId: int("studentUserId").notNull(),
+  // 희망 채용공고 정보
+  companyName: varchar("companyName", { length: 200 }).notNull(),
+  jobTitle: varchar("jobTitle", { length: 200 }).notNull(),
+  jobUrl: text("jobUrl"),                       // 공고 링크 (선택)
+  jobDescription: text("jobDescription"),       // 공고 내용 붙여넣기 (선택)
+  // 첨삭 받을 내 서류 첨부 (선택)
+  resumeId: int("resumeId"),
+  coverLetterId: int("coverLetterId"),
+  portfolioId: int("portfolioId"),
+  studentMessage: text("studentMessage"),       // 교육생 요청 메모
+  // 첨삭 진행 상태
+  status: mysqlEnum("status", ["pending", "in_review", "completed"]).default("pending").notNull(),
+  // 멘토/관리자 첨삭 결과
+  feedbackContent: text("feedbackContent"),     // 첨삭 지도 본문 (Markdown)
+  reviewerUserId: int("reviewerUserId"),        // 첨삭 작성자 userId
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  studentIdx: index("job_coaching_requests_studentUserId_idx").on(t.studentUserId),
+  statusIdx: index("job_coaching_requests_status_idx").on(t.status),
+}));
+export type JobCoachingRequest = typeof jobCoachingRequests.$inferSelect;
+export type InsertJobCoachingRequest = typeof jobCoachingRequests.$inferInsert;

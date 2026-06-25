@@ -11,6 +11,7 @@ import { companyRouter, trainingRouter, adminRouter } from "./routers/company";
 import { manualRouter } from "./routers/manual";
 import { resumeRouter } from "./routers/resume";
 import { guidanceRouter } from "./routers/guidance";
+import { coachingRouter } from "./routers/coaching";
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -32,6 +33,7 @@ export const appRouter = router({
   manual: manualRouter,
   resume: resumeRouter,
   guidance: guidanceRouter,
+  coaching: coachingRouter,
 });
 
 export type AppRouter = typeof appRouter;

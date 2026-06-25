@@ -168,6 +168,28 @@ describe("role-based access", () => {
       caller.company.searchStudents({ field: undefined, search: undefined }),
     ).rejects.toThrow();
   });
+
+  // ─── 채용공고 첨삭 ─────────────────────────────────────────────────────────
+  it("coaching.createRequest rejects non-student users", async () => {
+    const ctx = makeCompanyCtx();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.coaching.createRequest({ companyName: "A사", jobTitle: "디자이너" }),
+    ).rejects.toThrow();
+  });
+
+  it("coaching.listRequests rejects students (reviewer-only)", async () => {
+    const ctx = makeCtx({ role: "student" });
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.coaching.listRequests()).rejects.toThrow();
+  });
+
+  it("coaching.listRequests allows professor/admin/training reviewers", async () => {
+    for (const make of [makeProfessorCtx, makeAdminCtx, makeTrainingCtx]) {
+      const caller = appRouter.createCaller(make());
+      await expect(caller.coaching.listRequests()).resolves.toBeDefined();
+    }
+  });
 });
 
 // ─── Portfolio Tests ──────────────────────────────────────────────────────────

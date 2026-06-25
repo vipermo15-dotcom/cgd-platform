@@ -23,6 +23,7 @@ const StudentAIAnalysis = lazy(() => import("./pages/student/AIAnalysis"));
 const StudentCoverLetter = lazy(() => import("./pages/student/CoverLetter"));
 const StudentJobs = lazy(() => import("./pages/student/Jobs"));
 const StudentJobMatching = lazy(() => import("./pages/student/JobMatching"));
+const StudentJobCoaching = lazy(() => import("./pages/student/JobCoaching"));
 const StudentApplications = lazy(() => import("./pages/student/Applications"));
 const StudentProfile = lazy(() => import("./pages/student/Profile"));
 const StudentDocumentCenter = lazy(() => import("./pages/student/DocumentCenter"));
@@ -54,6 +55,7 @@ const AdminCompanyPipeline = lazy(() => import("./pages/admin/CompanyPipeline"))
 const AdminEmploymentStats = lazy(() => import("./pages/admin/EmploymentStats"));
 const AdminCareerGuidance = lazy(() => import("./pages/admin/CareerGuidance"));
 const AdminEmploymentBanners = lazy(() => import("./pages/admin/EmploymentBanners"));
+const AdminJobCoaching = lazy(() => import("./pages/admin/JobCoaching"));
 
 // Public pages
 const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
@@ -145,6 +147,9 @@ function Router() {
       <Route path="/student/job-matching">
         <RoleGuard allowedRoles={["student", "admin"]}><StudentJobMatching /></RoleGuard>
       </Route>
+      <Route path="/student/job-coaching">
+        <RoleGuard allowedRoles={["student", "admin"]}><StudentJobCoaching /></RoleGuard>
+      </Route>
       <Route path="/student/applications">
         <RoleGuard allowedRoles={["student", "admin"]}><StudentApplications /></RoleGuard>
       </Route>
@@ -225,6 +230,9 @@ function Router() {
       </Route>
       <Route path="/admin/banners">
         <RoleGuard allowedRoles={["admin", "professor"]}><AdminEmploymentBanners /></RoleGuard>
+      </Route>
+      <Route path="/admin/job-coaching">
+        <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><AdminJobCoaching /></RoleGuard>
       </Route>
 
       <Route path="/404" component={NotFound} />
