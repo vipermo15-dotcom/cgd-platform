@@ -14,6 +14,8 @@ import {
   updateApplicationStatus,
   updateJobPosting,
   getApplicationById,
+  getUserById,
+  autoCreateEmploymentBanner,
 } from "../db";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { sanitizeForPrompt, sanitizeList, UNTRUSTED_DATA_NOTICE } from "../_core/promptSafety";
@@ -199,6 +201,20 @@ export const jobsRouter = router({
           relatedId: applicationId,
           relatedType: 'job_application',
         });
+
+        // 최종합격 → 취업 축하 배너 자동 생성 + 취업상태 갱신
+        if (status === '최종합격') {
+          const posting = await getJobPostingById(app.jobPostingId);
+          const student = await getUserById(app.applicantUserId);
+          if (posting && student) {
+            await autoCreateEmploymentBanner({
+              studentUserId: app.applicantUserId,
+              studentName: student.name ?? '익명',
+              companyName: posting.company?.companyName ?? posting.posting.title,
+              jobTitle: posting.posting.title,
+            });
+          }
+        }
       }
       return { success: true };
     }),

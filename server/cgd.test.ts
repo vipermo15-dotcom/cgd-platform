@@ -233,6 +233,15 @@ describe("jobs", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(caller.jobs.adminPendingPostings()).resolves.toBeDefined();
   });
+
+  // 최종합격 처리 시 배너 자동 생성 경로가 예외 없이 동작해야 한다(DB 없으면 no-op)
+  it("updateApplicationStatus with 최종합격 resolves without throwing", async () => {
+    const ctx = makeCompanyCtx();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.jobs.updateApplicationStatus({ applicationId: 1, status: "최종합격" }),
+    ).resolves.toEqual({ success: true });
+  });
 });
 
 // ─── AI Router Tests ──────────────────────────────────────────────────────────
