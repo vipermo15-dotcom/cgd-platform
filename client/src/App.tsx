@@ -22,6 +22,7 @@ const StudentPortfolio = lazy(() => import("./pages/student/Portfolio"));
 const StudentAIAnalysis = lazy(() => import("./pages/student/AIAnalysis"));
 const StudentCoverLetter = lazy(() => import("./pages/student/CoverLetter"));
 const StudentJobs = lazy(() => import("./pages/student/Jobs"));
+const StudentJobMatching = lazy(() => import("./pages/student/JobMatching"));
 const StudentApplications = lazy(() => import("./pages/student/Applications"));
 const StudentProfile = lazy(() => import("./pages/student/Profile"));
 const StudentDocumentCenter = lazy(() => import("./pages/student/DocumentCenter"));
@@ -140,6 +141,9 @@ function Router() {
       </Route>
       <Route path="/student/jobs">
         <RoleGuard allowedRoles={["student", "admin"]}><StudentJobs /></RoleGuard>
+      </Route>
+      <Route path="/student/job-matching">
+        <RoleGuard allowedRoles={["student", "admin"]}><StudentJobMatching /></RoleGuard>
       </Route>
       <Route path="/student/applications">
         <RoleGuard allowedRoles={["student", "admin"]}><StudentApplications /></RoleGuard>

@@ -168,8 +168,8 @@
 - [x] 관리자: 취업 축하 배너 롤링 표시 — /admin/banners
 
 ### 교육생 강화
-- [ ] 교육생: 희망기업 매칭 페이지 신규 (/student/job-matching)
-      → 미구현. 라우트 없음. 채용공고 추천은 /student/jobs(AI 추천)으로 일부 대체.
+- [x] 교육생: 희망기업 매칭 페이지 신규 (/student/job-matching)
+      → AI 맞춤 매칭 결과(점수·사유) + 내 희망기업(북마크) + 지원 다이얼로그. 사이드바 메뉴 추가.
 - [x] 교육생: 프리랜서 경로 가이드 탭 (크몽·카카오·숨고) — /student/career-progress
 - [x] 교육생: 진로 트랙별 체크리스트 (마이페이지 오늘의 할 일) — /student/career-progress
 

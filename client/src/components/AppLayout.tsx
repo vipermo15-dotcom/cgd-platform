@@ -34,6 +34,7 @@ import {
   Map,
   PieChart,
   Trophy,
+  Target,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -55,6 +56,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "AI 역량 분석", href: "/student/ai-analysis", icon: <Bot size={18} /> },
         { label: "AI 자기소개서", href: "/student/cover-letter", icon: <FileText size={18} /> },
         { label: "채용공고", href: "/student/jobs", icon: <Briefcase size={18} /> },
+        { label: "희망기업 매칭", href: "/student/job-matching", icon: <Target size={18} /> },
         { label: "지원 현황", href: "/student/applications", icon: <ClipboardList size={18} /> },
         { label: "서류 등록 센터", href: "/student/documents", icon: <FolderCheck size={18} /> },
         { label: "진로 진행 현황", href: "/student/career-progress", icon: <TrendingUp size={18} /> },
