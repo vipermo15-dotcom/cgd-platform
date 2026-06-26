@@ -43,14 +43,17 @@ export function sanitizeForPrompt(
 
 /** 문자열 배열(스킬·툴 목록 등)을 각각 정제 후 콤마로 합친다. */
 export function sanitizeList(
-  items: readonly string[] | null | undefined,
+  items: readonly string[] | string | null | undefined,
   maxItems = 30,
   maxItemLength = 80,
 ): string {
-  if (!items || items.length === 0) return "";
-  return items
+  if (!items) return "";
+  // 배열이 아니면(문자열·기타) 단일 항목으로 취급해 .map 크래시를 방지한다.
+  const arr = Array.isArray(items) ? items : [items];
+  if (arr.length === 0) return "";
+  return arr
     .slice(0, maxItems)
-    .map((i) => sanitizeForPrompt(i, maxItemLength))
+    .map((i) => sanitizeForPrompt(i as any, maxItemLength))
     .filter(Boolean)
     .join(", ");
 }
