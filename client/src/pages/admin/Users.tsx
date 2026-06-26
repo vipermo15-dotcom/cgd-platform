@@ -15,6 +15,7 @@ import {
   CheckCircle2, Clock, XCircle, Star, History, Users, Pencil, Check, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import StudentDocumentsDialog from "./StudentDocumentsDialog";
 
 const ROLE_LABELS: Record<string, string> = {
   student: "재학생", professor: "학과장", company: "협력기업",
@@ -42,6 +43,9 @@ export default function AdminUsers() {
   // 이름 인라인 수정
   const [editNameId, setEditNameId] = useState<number | null>(null);
   const [editNameValue, setEditNameValue] = useState("");
+
+  // 서류 수정 모달
+  const [docsTarget, setDocsTarget] = useState<{ id: number; name: string } | null>(null);
 
   // 삭제 확인 모달
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
@@ -259,16 +263,26 @@ export default function AdminUsers() {
                           </SelectContent>
                         </Select>
 
-                        {/* 재학생 전용: 채용공고 매칭 */}
+                        {/* 재학생 전용: 서류 수정 + 채용공고 매칭 */}
                         {u.role === "student" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
-                            onClick={() => { setMatchTarget({ id: u.id, name: u.name ?? "이름 없음" }); setMatchedJobId(null); setJobSearch(""); }}
-                          >
-                            <Briefcase size={14} /> 채용 매칭
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-slate-600 border-slate-200 hover:bg-slate-50"
+                              onClick={() => setDocsTarget({ id: u.id, name: u.name ?? "이름 없음" })}
+                            >
+                              <Pencil size={14} /> 서류 수정
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 text-blue-600 border-blue-200 hover:bg-blue-50"
+                              onClick={() => { setMatchTarget({ id: u.id, name: u.name ?? "이름 없음" }); setMatchedJobId(null); setJobSearch(""); }}
+                            >
+                              <Briefcase size={14} /> 채용 매칭
+                            </Button>
+                          </>
                         )}
 
                         {/* 승인 대기 */}
@@ -499,6 +513,14 @@ export default function AdminUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 교육생 서류 수정 모달 */}
+      <StudentDocumentsDialog
+        userId={docsTarget?.id ?? null}
+        userName={docsTarget?.name ?? ""}
+        open={docsTarget !== null}
+        onClose={() => setDocsTarget(null)}
+      />
     </AppLayout>
   );
 }

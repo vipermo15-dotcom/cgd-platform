@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc";
+import { protectedProcedure, adminProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { getDb } from "../db";
+import { getDb, updateCoverLetter, updatePortfolio } from "../db";
 import { resumes, coverLetters, portfolios, notifications } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { sanitizeForPrompt, sanitizeList, UNTRUSTED_DATA_NOTICE } from "../_core/promptSafety";
@@ -597,5 +597,51 @@ export const resumeRouter = router({
           .map((p: any) => ({ ...p, matchScore: 70, matchReason: "기술 스택 일치" }));
         return { recommendations: fallback, summary: "기술 스택 기반 추천", topFields, studentName };
       }
+    }),
+
+  // ─── 관리자: 교육생 이력서 기본정보·요약 수정 (구조화 항목은 학생 본인이 관리) ──
+  adminUpdateStudentResume: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      name: z.string().optional(),
+      birthDate: z.string().optional(),
+      address: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      summary: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB 연결 실패" });
+      const { userId, ...fields } = input;
+      const [existing] = await db.select({ id: resumes.id }).from(resumes).where(eq(resumes.userId, userId)).limit(1);
+      if (existing) {
+        await db.update(resumes).set(fields).where(eq(resumes.id, existing.id));
+        return { id: existing.id };
+      }
+      const [result] = await db.insert(resumes).values({ userId, ...fields });
+      return { id: (result as any).insertId };
+    }),
+
+  // ─── 관리자: 교육생 자기소개서 수정 ──────────────────────────────────────────
+  adminUpdateStudentCoverLetter: adminProcedure
+    .input(z.object({ id: z.number(), title: z.string().optional(), content: z.string().min(1, "내용을 입력하세요.") }))
+    .mutation(async ({ input }) => {
+      await updateCoverLetter(input.id, { title: input.title, content: input.content });
+      return { success: true };
+    }),
+
+  // ─── 관리자: 교육생 포트폴리오 수정 ──────────────────────────────────────────
+  adminUpdateStudentPortfolio: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      externalUrl: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...fields } = input;
+      await updatePortfolio(id, fields);
+      return { success: true };
     }),
 });
