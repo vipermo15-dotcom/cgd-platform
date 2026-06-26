@@ -89,11 +89,13 @@ export const aiAgentRouter = router({
           ],
           response_format: { type: "json_object" },
         });
-        tokensUsed = response.tokensUsed ?? 0;
-        await createAiLog({ userId: ctx.user.id, action: "career_guidance", tokensUsed, success: true });
-        return { success: true, data: response.parsed };
+        tokensUsed = response.usage?.total_tokens ?? 0;
+        const raw = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof raw === "string" ? raw : "{}");
+        await createAiLog({ userId: ctx.user.id, type: "career_guidance", tokensUsed, success: true });
+        return { success: true, data };
       } catch (error) {
-        await createAiLog({ userId: ctx.user.id, action: "career_guidance", tokensUsed, success: false });
+        await createAiLog({ userId: ctx.user.id, type: "career_guidance", tokensUsed, success: false });
         throw error;
       }
     }),
@@ -119,11 +121,13 @@ export const aiAgentRouter = router({
           ],
           response_format: { type: "json_object" },
         });
-        tokensUsed = response.tokensUsed ?? 0;
-        await createAiLog({ userId: ctx.user.id, action: "job_analysis", tokensUsed, success: true });
-        return { success: true, data: response.parsed };
+        tokensUsed = response.usage?.total_tokens ?? 0;
+        const raw = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof raw === "string" ? raw : "{}");
+        await createAiLog({ userId: ctx.user.id, type: "job_analysis", tokensUsed, success: true });
+        return { success: true, data };
       } catch (error) {
-        await createAiLog({ userId: ctx.user.id, action: "job_analysis", tokensUsed, success: false });
+        await createAiLog({ userId: ctx.user.id, type: "job_analysis", tokensUsed, success: false });
         throw error;
       }
     }),
@@ -149,11 +153,13 @@ export const aiAgentRouter = router({
           ],
           response_format: { type: "json_object" },
         });
-        tokensUsed = response.tokensUsed ?? 0;
-        await createAiLog({ userId: ctx.user.id, action: "portfolio_guide", tokensUsed, success: true });
-        return { success: true, data: response.parsed };
+        tokensUsed = response.usage?.total_tokens ?? 0;
+        const raw = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof raw === "string" ? raw : "{}");
+        await createAiLog({ userId: ctx.user.id, type: "portfolio_guide", tokensUsed, success: true });
+        return { success: true, data };
       } catch (error) {
-        await createAiLog({ userId: ctx.user.id, action: "portfolio_guide", tokensUsed, success: false });
+        await createAiLog({ userId: ctx.user.id, type: "portfolio_guide", tokensUsed, success: false });
         throw error;
       }
     }),
