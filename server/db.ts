@@ -550,17 +550,21 @@ export async function getDashboardStats() {
   const db = await getDb();
   if (!db) return null;
   const [totalStudents] = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, "student"));
+  const [totalUsers] = await db.select({ count: sql<number>`count(*)` }).from(users);
   const [employed] = await db.select({ count: sql<number>`count(*)` }).from(studentProfiles).where(eq(studentProfiles.employmentStatus, "취업확정"));
   const [totalPostings] = await db.select({ count: sql<number>`count(*)` }).from(jobPostings).where(eq(jobPostings.status, "approved"));
   const [totalApplications] = await db.select({ count: sql<number>`count(*)` }).from(jobApplications);
   const [totalPortfolios] = await db.select({ count: sql<number>`count(*)` }).from(portfolios);
+  const [totalAiAnalyses] = await db.select({ count: sql<number>`count(*)` }).from(aiAnalyses);
   return {
     totalStudents: totalStudents?.count ?? 0,
+    totalUsers: totalUsers?.count ?? 0,
     employedStudents: employed?.count ?? 0,
     employmentRate: totalStudents?.count ? Math.round(((employed?.count ?? 0) / totalStudents.count) * 100) : 0,
     totalPostings: totalPostings?.count ?? 0,
     totalApplications: totalApplications?.count ?? 0,
     totalPortfolios: totalPortfolios?.count ?? 0,
+    totalAiAnalyses: totalAiAnalyses?.count ?? 0,
   };
 }
 

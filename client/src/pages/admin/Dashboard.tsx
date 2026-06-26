@@ -12,10 +12,10 @@ export default function AdminDashboard() {
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "전체 회원", value: stats?.totalStudents ?? 0, icon: <Users size={18} />, color: "text-blue-500", bg: "bg-blue-50", href: "/admin/users" },
+            { label: "전체 회원", value: stats?.totalUsers ?? 0, icon: <Users size={18} />, color: "text-blue-500", bg: "bg-blue-50", href: "/admin/users" },
             { label: "채용공고", value: stats?.totalPostings ?? 0, icon: <Briefcase size={18} />, color: "text-purple-500", bg: "bg-purple-50", href: "/admin/postings" },
             { label: "포트폴리오", value: stats?.totalPortfolios ?? 0, icon: <FileText size={18} />, color: "text-emerald-500", bg: "bg-emerald-50", href: "/admin/users" },
-            { label: "AI 분석", value: stats?.totalApplications ?? 0, icon: <Bot size={18} />, color: "text-orange-500", bg: "bg-orange-50", href: "/admin/ai-logs" },
+            { label: "AI 분석", value: stats?.totalAiAnalyses ?? 0, icon: <Bot size={18} />, color: "text-orange-500", bg: "bg-orange-50", href: "/admin/ai-logs" },
           ].map((s) => (
             <Link key={s.label} href={s.href}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer">

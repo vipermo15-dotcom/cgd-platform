@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { router, protectedProcedure, studentProcedure } from "../_core/trpc";
 import { getDb, createNotification, getUserById } from "../db";
 import {
@@ -49,6 +49,24 @@ export const coachingRouter = router({
         studentMessage: input.studentMessage,
         status: "pending",
       });
+
+      // 첨삭 권한자(학과장·관리자·공동훈련센터) 전원에게 알림
+      const student = await getUserById(ctx.user.id);
+      const reviewers = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(inArray(users.role, ["admin", "professor", "training_center"]));
+      for (const r of reviewers) {
+        await createNotification({
+          userId: r.id,
+          type: "job_coaching_request",
+          title: "새 채용공고 첨삭 요청",
+          message: `${student?.name ?? "교육생"}님이 '${input.companyName} - ${input.jobTitle}' 첨삭을 요청했습니다.`,
+          relatedId: Number(result.insertId),
+          relatedType: "job_coaching",
+        });
+      }
+
       return { id: result.insertId };
     }),
 
