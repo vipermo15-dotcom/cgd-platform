@@ -190,6 +190,26 @@ describe("role-based access", () => {
       await expect(caller.coaching.listRequests()).resolves.toBeDefined();
     }
   });
+
+  // ─── AI 자동 매칭 ──────────────────────────────────────────────────────────
+  it("aiMatch.listStudents rejects students", async () => {
+    const ctx = makeCtx({ role: "student" });
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.aiMatch.listStudents()).rejects.toThrow();
+  });
+
+  it("aiMatch.listStudents allows professor/admin/training reviewers", async () => {
+    for (const make of [makeProfessorCtx, makeAdminCtx, makeTrainingCtx]) {
+      const caller = appRouter.createCaller(make());
+      await expect(caller.aiMatch.listStudents()).resolves.toBeDefined();
+    }
+  });
+
+  it("aiMatch.analyzeStudent rejects non-reviewer (company)", async () => {
+    const ctx = makeCompanyCtx();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.aiMatch.analyzeStudent({ studentUserId: 1 })).rejects.toThrow();
+  });
 });
 
 // ─── Portfolio Tests ──────────────────────────────────────────────────────────

@@ -71,6 +71,7 @@ function getNavItems(role: string): NavItem[] {
       return [
         { label: "대시보드", href: "/professor", icon: <LayoutDashboard size={18} /> },
         { label: "학생 관리", href: "/professor/students", icon: <Users size={18} /> },
+        { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
         { label: "서류 검토", href: "/professor/documents", icon: <FolderCheck size={18} /> },
         { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
         { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
@@ -90,6 +91,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "대시보드", href: "/training", icon: <LayoutDashboard size={18} /> },
         { label: "협력기업 관리", href: "/training/companies", icon: <Building2 size={18} /> },
         { label: "AI 매칭", href: "/training/matching", icon: <Bot size={18} /> },
+        { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
         { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
       ];
@@ -98,6 +100,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "대시보드", href: "/admin", icon: <LayoutDashboard size={18} /> },
         { label: "회원 관리", href: "/admin/users", icon: <Users size={18} /> },
         { label: "공고 승인", href: "/admin/postings", icon: <CheckSquare size={18} /> },
+        { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
         { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
         { label: "AI 로그", href: "/admin/ai-logs", icon: <Activity size={18} /> },
         { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },

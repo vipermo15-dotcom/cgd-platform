@@ -57,6 +57,7 @@ const AdminEmploymentStats = lazy(() => import("./pages/admin/EmploymentStats"))
 const AdminCareerGuidance = lazy(() => import("./pages/admin/CareerGuidance"));
 const AdminEmploymentBanners = lazy(() => import("./pages/admin/EmploymentBanners"));
 const AdminJobCoaching = lazy(() => import("./pages/admin/JobCoaching"));
+const AdminAIMatching = lazy(() => import("./pages/admin/AIMatching"));
 
 // Public pages
 const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
@@ -237,6 +238,9 @@ function Router() {
       </Route>
       <Route path="/admin/job-coaching">
         <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><AdminJobCoaching /></RoleGuard>
+      </Route>
+      <Route path="/admin/ai-matching">
+        <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><AdminAIMatching /></RoleGuard>
       </Route>
 
       <Route path="/404" component={NotFound} />

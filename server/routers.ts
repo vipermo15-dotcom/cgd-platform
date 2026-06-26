@@ -12,6 +12,7 @@ import { manualRouter } from "./routers/manual";
 import { resumeRouter } from "./routers/resume";
 import { guidanceRouter } from "./routers/guidance";
 import { coachingRouter } from "./routers/coaching";
+import { aiMatchRouter } from "./routers/aimatch";
 import { aiAgentRouter } from "./routers/ai-agent";
 export const appRouter = router({
   system: systemRouter,
@@ -36,6 +37,7 @@ export const appRouter = router({
   guidance: guidanceRouter,
   coaching: coachingRouter,
   aiAgent: aiAgentRouter,
+  aiMatch: aiMatchRouter,
 });
 
 export type AppRouter = typeof appRouter;
