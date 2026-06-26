@@ -89,6 +89,12 @@ export async function updateUserRole(userId: number, role: "student" | "professo
   await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, userId));
 }
 
+export async function updateUserName(userId: number, name: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ name, updatedAt: new Date() }).where(eq(users.id, userId));
+}
+
 export async function updateUserStatus(userId: number, status: "pending" | "approved" | "rejected") {
   const db = await getDb();
   if (!db) return;

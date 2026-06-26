@@ -13,6 +13,7 @@ import {
   getUserNotifications,
   updateUserRole,
   updateUserStatus,
+  updateUserName,
   upsertCompanyProfile,
   upsertStudentProfile,
   upsertUser,
@@ -102,6 +103,14 @@ export const userRouter = router({
         }
       }
       await upsertStudentProfile(ctx.user.id, data);
+      return { success: true };
+    }),
+
+  // 내 이름 수정 (본인)
+  updateMyName: protectedProcedure
+    .input(z.object({ name: z.string().min(1, "이름을 입력하세요.").max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      await updateUserName(ctx.user.id, input.name.trim());
       return { success: true };
     }),
 
@@ -263,6 +272,14 @@ export const userRouter = router({
     .input(z.object({ userId: z.number(), role: z.enum(["student", "professor", "company", "training_center", "admin", "user"]) }))
     .mutation(async ({ input }) => {
       await updateUserRole(input.userId, input.role);
+      return { success: true };
+    }),
+
+  // 관리자: 회원 이름 수정
+  adminUpdateUserName: adminProcedure
+    .input(z.object({ userId: z.number(), name: z.string().min(1, "이름을 입력하세요.").max(100) }))
+    .mutation(async ({ input }) => {
+      await updateUserName(input.userId, input.name.trim());
       return { success: true };
     }),
 

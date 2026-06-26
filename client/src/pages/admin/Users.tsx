@@ -12,7 +12,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import {
   Search, UserCheck, UserX, Trash2, Briefcase, Building2,
-  CheckCircle2, Clock, XCircle, Star, History, Users,
+  CheckCircle2, Clock, XCircle, Star, History, Users, Pencil, Check, X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,6 +38,10 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("전체");
   const [statusFilter, setStatusFilter] = useState("전체");
+
+  // 이름 인라인 수정
+  const [editNameId, setEditNameId] = useState<number | null>(null);
+  const [editNameValue, setEditNameValue] = useState("");
 
   // 삭제 확인 모달
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
@@ -115,6 +119,19 @@ export default function AdminUsers() {
     onError: (e: { message: string }) => toast.error(e.message),
   });
 
+  // 이름 수정
+  const updateNameMutation = trpc.user.adminUpdateUserName.useMutation({
+    onSuccess: () => { utils.user.adminGetUsers.invalidate(); setEditNameId(null); toast.success("이름이 변경되었습니다."); },
+    onError: (e: { message: string }) => toast.error(e.message),
+  });
+
+  const startEditName = (id: number, current: string) => { setEditNameId(id); setEditNameValue(current); };
+  const saveEditName = () => {
+    if (editNameId == null) return;
+    if (!editNameValue.trim()) { toast.error("이름을 입력하세요."); return; }
+    updateNameMutation.mutate({ userId: editNameId, name: editNameValue.trim() });
+  };
+
   const toggleStudentSelect = (id: number) => {
     setSelectedStudentIds((prev) => {
       const next = new Set(prev);
@@ -190,7 +207,30 @@ export default function AdminUsers() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium">{u.name ?? "이름 없음"}</p>
+                          {editNameId === u.id ? (
+                            <span className="flex items-center gap-1">
+                              <Input
+                                value={editNameValue}
+                                onChange={(e) => setEditNameValue(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") saveEditName(); if (e.key === "Escape") setEditNameId(null); }}
+                                className="h-7 w-40 text-sm"
+                                autoFocus
+                              />
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={saveEditName} disabled={updateNameMutation.isPending} aria-label="저장">
+                                <Check size={15} />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={() => setEditNameId(null)} aria-label="취소">
+                                <X size={15} />
+                              </Button>
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 group">
+                              <p className="font-medium">{u.name ?? "이름 없음"}</p>
+                              <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground opacity-60 hover:opacity-100" onClick={() => startEditName(u.id, u.name ?? "")} aria-label="이름 수정">
+                                <Pencil size={13} />
+                              </Button>
+                            </span>
+                          )}
                           <Badge variant="secondary" className="text-xs">{ROLE_LABELS[u.role] ?? u.role}</Badge>
                           <Badge className={`text-xs ${STATUS_COLORS[u.status] ?? ""}`}>
                             {u.status === "pending" ? "대기" : u.status === "active" ? "활성" : "반려"}

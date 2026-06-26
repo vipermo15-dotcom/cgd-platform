@@ -18,6 +18,7 @@ export default function StudentProfile() {
   const utils = trpc.useUtils();
   const { data: profile } = trpc.user.getStudentProfile.useQuery();
 
+  const [name, setName] = useState("");
   const [studentId, setStudentId] = useState("");
   const [major, setMajor] = useState("");
   const [phone, setPhone] = useState("");
@@ -28,6 +29,10 @@ export default function StudentProfile() {
   const [isPublic, setIsPublic] = useState(false);
   const [employmentStatus, setEmploymentStatus] = useState<"준비중" | "지원중" | "취업확정" | "미시작">("미시작");
   const [employedCompany, setEmployedCompany] = useState("");
+
+  useEffect(() => {
+    if (user?.name) setName(user.name);
+  }, [user?.name]);
 
   useEffect(() => {
     if (profile) {
@@ -43,6 +48,8 @@ export default function StudentProfile() {
     }
   }, [profile]);
 
+  const updateName = trpc.user.updateMyName.useMutation();
+
   const update = trpc.user.updateStudentProfile.useMutation({
     onSuccess: () => { utils.user.getStudentProfile.invalidate(); toast.success("프로필이 저장되었습니다."); },
     onError: (e) => toast.error(e.message),
@@ -57,7 +64,12 @@ export default function StudentProfile() {
 
   const removeSkill = (s: string) => setSkills(skills.filter(sk => sk !== s));
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // 이름이 바뀌었으면 함께 저장 후 헤더/사이드바 갱신
+    if (name.trim() && name.trim() !== (user?.name ?? "")) {
+      await updateName.mutateAsync({ name: name.trim() });
+      utils.auth.me.invalidate();
+    }
     update.mutate({
       studentId, major, phone, bio, skills, publicSlug, isPublic,
       employmentStatus,
@@ -77,7 +89,7 @@ export default function StudentProfile() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>이름</Label>
-                <Input value={user?.name ?? ""} disabled className="mt-1 bg-muted" />
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder="이름" className="mt-1" />
               </div>
               <div>
                 <Label>학번</Label>
