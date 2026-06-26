@@ -36,6 +36,7 @@ import {
   Trophy,
   Target,
   PencilLine,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -55,6 +56,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "홈", href: "/student", icon: <Home size={18} /> },
         { label: "포트폴리오 관리", href: "/student/portfolio", icon: <FolderOpen size={18} /> },
         { label: "AI 역량 분석", href: "/student/ai-analysis", icon: <Bot size={18} /> },
+        { label: "AI 취업진로 에이전트", href: "/student/ai-agents", icon: <Sparkles size={18} /> },
         { label: "AI 자기소개서", href: "/student/cover-letter", icon: <FileText size={18} /> },
         { label: "채용공고", href: "/student/jobs", icon: <Briefcase size={18} /> },
         { label: "희망기업 매칭", href: "/student/job-matching", icon: <Target size={18} /> },
