@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 import {
@@ -41,6 +42,97 @@ import {
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import NotificationDropdown from "./NotificationDropdown";
+
+// ─── 업데이트 알림 패널 ───────────────────────────────────────────────────────
+
+const APP_VERSION = "2.7";
+const SEEN_KEY = `cgd-seen-v${APP_VERSION}`;
+
+const UPDATE_LOG = [
+  {
+    version: "2.7",
+    date: "2026-06-29",
+    label: "AI 에이전트 대폭 확장",
+    items: [
+      "AI 포트폴리오 코치 · 점수 · 자기소개서",
+      "AI 면접 준비 · 학습 로드맵",
+      "AI 취업 준비도(0~100점) · 주간 리포트",
+      "관리자 사전 설문 결과 탭 + 첨삭 적용 버튼",
+    ],
+  },
+  {
+    version: "2.6",
+    date: "2026-06-22",
+    label: "진로지도 사전 설문 + 채팅",
+    items: [
+      "교육생 사전 설문 5단계 위저드",
+      "진로 채팅 AI 상담",
+      "내 진로카드 탭",
+    ],
+  },
+];
+
+function UpdatePanel() {
+  const [open, setOpen] = useState(false);
+  const isNew = !localStorage.getItem(SEEN_KEY);
+
+  const handleOpen = () => {
+    localStorage.setItem(SEEN_KEY, "1");
+    setOpen(true);
+  };
+
+  return (
+    <>
+      {/* 알림 벨 버튼 */}
+      <button
+        onClick={handleOpen}
+        className="relative h-9 w-9 flex items-center justify-center rounded-lg hover:bg-accent transition-colors"
+        title="업데이트 소식"
+      >
+        <Bell size={18} className="text-muted-foreground" />
+        {isNew && (
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+        )}
+      </button>
+
+      {/* 사이드 패널 */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="right" className="w-80 p-0">
+          <div className="flex items-center justify-between px-5 py-4 border-b">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-primary" />
+              <h2 className="font-semibold text-sm">업데이트 소식</h2>
+              <Badge className="text-xs bg-primary text-white">v{APP_VERSION}</Badge>
+            </div>
+          </div>
+          <ScrollArea className="h-[calc(100vh-65px)]">
+            <div className="p-5 space-y-5">
+              {UPDATE_LOG.map((log) => (
+                <div key={log.version}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="text-xs">v{log.version}</Badge>
+                    <span className="text-xs text-muted-foreground">{log.date}</span>
+                  </div>
+                  <p className="text-sm font-medium mb-2">{log.label}</p>
+                  <ul className="space-y-1.5">
+                    {log.items.map((item, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-muted-foreground">
+                        <span className="text-primary shrink-0 mt-0.5">✓</span>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <Separator className="mt-4" />
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground text-center pb-2">이전 버전 내용은 관리자 대시보드에서 확인하세요.</p>
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
 
 type NavItem = {
   label: string;
@@ -245,7 +337,8 @@ export default function AppLayout({ children, title }: AppLayoutProps) {
           </Sheet>
 
           {title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-1">
+            <UpdatePanel />
             <NotificationDropdown />
           </div>
         </header>
