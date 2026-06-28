@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Sparkles, User, CheckSquare, Building2, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, User, CheckSquare, Building2, ChevronDown, ChevronUp, ClipboardList, ArrowRight, Wrench, Layers } from "lucide-react";
 
 const CAREER_TRACKS = [
   { value: "brand_design", label: "브랜드 디자인" },
@@ -42,9 +42,42 @@ interface StudentItem {
   skills?: string[];
 }
 
+type SurveyRow = {
+  guidanceId: number;
+  studentUserId: number;
+  careerTrack: string;
+  updatedAt: string;
+  userName: string | null;
+  surveyData: {
+    tools: string[];
+    works: string[];
+    aiUsage: string;
+    workType: string;
+    industry: string;
+    submittedAt: string;
+    guidanceResult?: {
+      추천직무?: Array<{ 직무명: string; 이유: string }>;
+      취업처목록?: Array<{ 순위: number; 업종: string; 포지션: string; 추천이유: string; 준비포인트: string }>;
+      준비로드맵?: { 단기1개월: string; 중기3개월: string; 포트폴리오핵심: string };
+    };
+  } | null;
+};
+
+// AI 취업처목록 → recommendedCompanies 형식 변환
+function convertToRecommendations(취업처목록?: SurveyRow["surveyData"] extends null ? never : NonNullable<SurveyRow["surveyData"]>["guidanceResult"]) {
+  if (!취업처목록?.취업처목록) return [];
+  return 취업처목록.취업처목록.map((c) => ({
+    companyName: c.포지션,
+    jobTitle: c.업종,
+    reason: `${c.추천이유} | 준비: ${c.준비포인트}`,
+    matchScore: 80,
+  }));
+}
+
 export default function CareerGuidance() {
   const { data: users = [] } = trpc.user.adminGetUsers.useQuery({ role: "student" });
   const students = (users as StudentItem[]).filter((u: any) => u.role === "student");
+  const { data: surveys = [], refetch: refetchSurveys } = trpc.aiAgent.adminGetSurveys.useQuery();
 
   const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
   const [careerTrack, setCareerTrack] = useState<CareerTrack>("undecided");
@@ -125,6 +158,29 @@ export default function CareerGuidance() {
 
   const completedCount = checklist.filter((c) => c.done).length;
 
+  // 설문 데이터를 진로지도 카드 폼에 적용
+  const applyFromSurvey = (survey: SurveyRow) => {
+    const student = students.find((s) => s.id === survey.studentUserId);
+    if (student) handleSelectStudent(student);
+    if (survey.surveyData?.guidanceResult) {
+      const recs = convertToRecommendations(survey.surveyData.guidanceResult);
+      setAiRecommendations(recs);
+      const note = [
+        `[사전 설문 자동 적용 - ${new Date(survey.surveyData.submittedAt).toLocaleDateString("ko-KR")}]`,
+        `보유 툴: ${survey.surveyData.tools.join(", ")}`,
+        `주요 작업물: ${survey.surveyData.works.join(", ")}`,
+        `AI 활용: ${survey.surveyData.aiUsage}`,
+        `희망 근무: ${survey.surveyData.workType}`,
+        `희망 업종: ${survey.surveyData.industry}`,
+        survey.surveyData.guidanceResult.준비로드맵
+          ? `\n[AI 준비 로드맵]\n단기: ${survey.surveyData.guidanceResult.준비로드맵.단기1개월}\n중기: ${survey.surveyData.guidanceResult.준비로드맵.중기3개월}`
+          : "",
+      ].filter(Boolean).join("\n");
+      setGuidanceNote(note);
+    }
+    toast.success(`${survey.userName ?? "학생"} 설문 데이터가 진로지도 카드에 적용됐습니다.`);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -132,6 +188,86 @@ export default function CareerGuidance() {
         <p className="text-sm text-muted-foreground mt-1">교육생별 진로 트랙 설정, 체크리스트 관리, AI 취업처 추천</p>
       </div>
 
+      {/* 설문 제출 현황 배너 */}
+      {surveys.length > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="py-3 px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm">
+              <ClipboardList size={16} className="text-primary" />
+              <span>사전 설문 제출 <strong>{surveys.length}명</strong> — 아래 탭에서 확인 후 첨삭에 바로 적용할 수 있습니다.</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Tabs defaultValue="guidance">
+        <TabsList>
+          <TabsTrigger value="guidance" className="gap-1.5"><User size={14} /> 진로지도 카드</TabsTrigger>
+          <TabsTrigger value="surveys" className="gap-1.5">
+            <ClipboardList size={14} /> 사전 설문 결과
+            {surveys.length > 0 && <Badge className="ml-1 h-4 text-xs px-1">{surveys.length}</Badge>}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ── 설문 결과 탭 ── */}
+        <TabsContent value="surveys" className="mt-4">
+          {surveys.length === 0 ? (
+            <Card><CardContent className="py-16 text-center text-muted-foreground">아직 제출된 사전 설문이 없습니다.</CardContent></Card>
+          ) : (
+            <div className="space-y-3">
+              {(surveys as SurveyRow[]).map((row) => (
+                <Card key={row.guidanceId} className="overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                          {row.userName?.charAt(0) ?? "?"}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{row.userName ?? "학생"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            제출: {row.surveyData?.submittedAt ? new Date(row.surveyData.submittedAt).toLocaleDateString("ko-KR") : "-"}
+                          </p>
+                        </div>
+                      </div>
+                      <Button size="sm" className="gap-1.5" onClick={() => applyFromSurvey(row)}>
+                        진로지도에 적용 <ArrowRight size={12} />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-2">
+                    {row.surveyData && (
+                      <>
+                        <div className="flex flex-wrap gap-1 items-center text-xs">
+                          <Wrench size={12} className="text-muted-foreground" />
+                          {row.surveyData.tools.map((t) => <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>)}
+                        </div>
+                        <div className="flex flex-wrap gap-1 items-center text-xs">
+                          <Layers size={12} className="text-muted-foreground" />
+                          {row.surveyData.works.map((w) => <Badge key={w} variant="outline" className="text-xs">{w}</Badge>)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          희망: {row.surveyData.workType || "무관"} / {row.surveyData.industry || "무관"} | AI: {row.surveyData.aiUsage || "-"}
+                        </p>
+                        {row.surveyData.guidanceResult?.추천직무 && (
+                          <div className="flex gap-1 flex-wrap mt-1">
+                            <span className="text-xs text-muted-foreground">AI 추천 직무:</span>
+                            {row.surveyData.guidanceResult.추천직무.map((j) => (
+                              <Badge key={j.직무명} className="text-xs">{j.직무명}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ── 진로지도 카드 탭 ── */}
+        <TabsContent value="guidance" className="mt-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 학생 목록 */}
         <Card className="lg:col-span-1">
@@ -330,6 +466,8 @@ export default function CareerGuidance() {
           )}
         </div>
       </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

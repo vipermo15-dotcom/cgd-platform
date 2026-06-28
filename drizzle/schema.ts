@@ -434,6 +434,20 @@ export const careerGuidance = mysqlTable("career_guidance", {
   guidanceNote: text("guidanceNote"),
   // AI 추천 사유
   aiRecommendReason: text("aiRecommendReason"),
+  // 학생 사전 설문 결과
+  surveyData: json("surveyData").$type<{
+    tools: string[];
+    works: string[];
+    aiUsage: string;
+    workType: string;
+    industry: string;
+    submittedAt: string;
+    guidanceResult?: {
+      추천직무?: Array<{ 직무명: string; 이유: string }>;
+      취업처목록?: Array<{ 순위: number; 업종: string; 포지션: string; 추천이유: string; 준비포인트: string }>;
+      준비로드맵?: { 단기1개월: string; 중기3개월: string; 포트폴리오핵심: string };
+    };
+  }>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (t) => ({

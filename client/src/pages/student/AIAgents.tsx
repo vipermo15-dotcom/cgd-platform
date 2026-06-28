@@ -746,9 +746,9 @@ function MyGuidanceTab() {
             )}
           </div>
         </CardHeader>
-        {card.guidanceMemo && (
+        {card.guidanceNote && (
           <CardContent>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{card.guidanceMemo}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{card.guidanceNote}</p>
           </CardContent>
         )}
       </Card>

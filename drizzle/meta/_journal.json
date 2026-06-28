@@ -64,6 +64,13 @@
       "when": 1782364965294,
       "tag": "0008_abandoned_brother_voodoo",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1782450000000,
+      "tag": "0009_add_survey_data",
+      "breakpoints": true
     }
   ]
 }

@@ -3,8 +3,9 @@
 
 import { z } from "zod";
 import { router, protectedProcedure } from "../_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { invokeLLM } from "../_core/llm";
-import { createAiLog } from "../db";
+import { createAiLog, getDb } from "../db";
 import { enforceAiRateLimit, AI_LIMITS } from "../_core/rateLimit";
 import {
   sanitizeForPrompt,
@@ -12,6 +13,8 @@ import {
   UNTRUSTED_DATA_NOTICE,
   wrapUntrusted,
 } from "../_core/promptSafety";
+import { careerGuidance, users, studentProfiles } from "../../drizzle/schema";
+import { eq, isNotNull, desc } from "drizzle-orm";
 
 // ─── 시스템 프롬프트 ───────────────────────────────────────────────────────────
 
@@ -212,7 +215,7 @@ ${UNTRUSTED_DATA_NOTICE}`;
       }
     }),
 
-  // 5. 사전 설문 제출 → 자동 진로지도 실행
+  // 5. 사전 설문 제출 → AI 진로 분석 + DB 저장
   submitSurvey: protectedProcedure
     .input(z.object({
       tools: z.array(z.string().max(50)).max(20),
@@ -233,6 +236,7 @@ ${UNTRUSTED_DATA_NOTICE}`;
 희망 업종: ${sanitizeForPrompt(input.industry || "무관", 100)}`;
 
       let tokensUsed = 0;
+      let guidanceResult: object = {};
       try {
         const response = await invokeLLM({
           messages: [
@@ -243,12 +247,66 @@ ${UNTRUSTED_DATA_NOTICE}`;
         });
         tokensUsed = response.usage?.total_tokens ?? 0;
         const raw = response.choices[0]?.message?.content;
-        const data = JSON.parse(typeof raw === "string" ? raw : "{}");
+        guidanceResult = JSON.parse(typeof raw === "string" ? raw : "{}");
         await createAiLog({ userId: ctx.user.id, type: "survey_guidance", tokensUsed, success: true });
-        return { success: true, surveyInput: input, guidanceResult: data };
       } catch (error) {
         await createAiLog({ userId: ctx.user.id, type: "survey_guidance", tokensUsed, success: false });
         throw error;
       }
+
+      // DB에 설문 결과 저장 (career_guidance 레코드 upsert)
+      const db = await getDb();
+      if (db) {
+        const surveyData = {
+          tools: input.tools,
+          works: input.works,
+          aiUsage: input.aiUsage ?? "",
+          workType: input.workType ?? "",
+          industry: input.industry ?? "",
+          submittedAt: new Date().toISOString(),
+          guidanceResult,
+        };
+        const [existing] = await db
+          .select({ id: careerGuidance.id })
+          .from(careerGuidance)
+          .where(eq(careerGuidance.studentUserId, ctx.user.id))
+          .limit(1);
+        if (existing) {
+          await db.update(careerGuidance)
+            .set({ surveyData })
+            .where(eq(careerGuidance.id, existing.id));
+        } else {
+          await db.insert(careerGuidance).values({
+            studentUserId: ctx.user.id,
+            careerTrack: "undecided",
+            surveyData,
+          });
+        }
+      }
+
+      return { success: true, surveyInput: input, guidanceResult };
+    }),
+
+  // 6. 관리자용: 설문 제출한 학생 목록 조회
+  adminGetSurveys: protectedProcedure
+    .query(async ({ ctx }) => {
+      const isAdmin = ctx.user.role === "admin" || ctx.user.role === "professor" || ctx.user.role === "training_center";
+      if (!isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const rows = await db
+        .select({
+          guidanceId: careerGuidance.id,
+          studentUserId: careerGuidance.studentUserId,
+          careerTrack: careerGuidance.careerTrack,
+          surveyData: careerGuidance.surveyData,
+          updatedAt: careerGuidance.updatedAt,
+          userName: users.name,
+        })
+        .from(careerGuidance)
+        .innerJoin(users, eq(careerGuidance.studentUserId, users.id))
+        .where(isNotNull(careerGuidance.surveyData))
+        .orderBy(desc(careerGuidance.updatedAt));
+      return rows;
     }),
 });
