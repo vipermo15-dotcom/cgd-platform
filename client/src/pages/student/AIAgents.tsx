@@ -1362,6 +1362,202 @@ function WeeklyReportTab() {
   );
 }
 
+// ─── 포트폴리오 구성전략 탭 (채용분야 기반 사전 전략) ──────────────────────────
+
+const TARGET_FIELDS = [
+  "이커머스/상세페이지 디자이너", "SNS 콘텐츠/마케팅 디자이너", "브랜드/BI 디자이너",
+  "영상편집/모션그래픽 디자이너", "UI/UX 디자이너", "편집디자인/출판", "광고대행사 디자이너",
+  "캐릭터/일러스트레이터", "AI 콘텐츠 크리에이터", "프리랜서 디자이너",
+];
+
+function PortfolioStrategyTab() {
+  const [targetField, setTargetField] = useState("");
+  const [customField, setCustomField] = useState("");
+  const [jobPosting, setJobPosting] = useState("");
+  const [tools, setTools] = useState<string[]>([]);
+  const [currentWorks, setCurrentWorks] = useState<string[]>([]);
+  const [level, setLevel] = useState("초급~중급");
+
+  const mutation = trpc.aiAgent.portfolioStrategy.useMutation({ onError: (e) => toast.error(e.message) });
+
+  const result = mutation.data?.data as {
+    전략요약?: string;
+    핵심어필포인트?: string[];
+    추천구성?: Array<{
+      순서: number;
+      작업물유형: string;
+      목적: string;
+      강조포인트: string;
+      분량: string;
+      AI활용권장: boolean;
+    }>;
+    채용분야별키워드?: string[];
+    제작우선순위?: string[];
+    피해야할실수?: string[];
+    예상심사기준?: string;
+  } | undefined;
+
+  const field = targetField === "직접입력" ? customField : targetField;
+
+  return (
+    <div className="space-y-6">
+      {/* 안내 카드 */}
+      <div className="flex gap-3 bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm">
+        <Sparkles size={16} className="text-primary shrink-0 mt-0.5" />
+        <div>
+          <p className="font-medium text-primary mb-1">포트폴리오 제작 전 전략부터!</p>
+          <p className="text-muted-foreground text-xs">희망 취업분야와 채용공고를 입력하면 어떤 작업물을 어떤 순서로 담아야 하는지 AI가 전략을 세워드립니다.</p>
+        </div>
+      </div>
+
+      {/* 희망 취업분야 */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">희망 취업분야 *</label>
+        <div className="flex flex-wrap gap-2">
+          {TARGET_FIELDS.map((f) => (
+            <Badge
+              key={f}
+              variant={targetField === f ? "default" : "outline"}
+              className="cursor-pointer text-xs py-1 px-3"
+              onClick={() => setTargetField(f)}
+            >{f}</Badge>
+          ))}
+          <Badge
+            variant={targetField === "직접입력" ? "default" : "outline"}
+            className="cursor-pointer text-xs py-1 px-3"
+            onClick={() => setTargetField("직접입력")}
+          >직접 입력</Badge>
+        </div>
+        {targetField === "직접입력" && (
+          <Input value={customField} onChange={(e) => setCustomField(e.target.value)} placeholder="희망 취업분야를 입력해주세요…" />
+        )}
+      </div>
+
+      {/* 채용공고 (선택) */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">채용공고 붙여넣기 <span className="text-muted-foreground font-normal">(선택 — 있으면 더 정확해요)</span></label>
+        <Textarea value={jobPosting} onChange={(e) => setJobPosting(e.target.value)} placeholder="채용공고 전문을 붙여넣어 주세요…" rows={5} className="resize-none" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TagInput label="보유 툴 *" placeholder="Photoshop…" values={tools} onChange={setTools} />
+        <TagInput label="현재 작업물 현황" placeholder="상세페이지 2개, SNS 포스터…" values={currentWorks} onChange={setCurrentWorks} />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">현재 수준</label>
+        <Select value={level} onValueChange={setLevel}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="입문 (툴 기초)">입문 (툴 기초)</SelectItem>
+            <SelectItem value="초급~중급">초급~중급</SelectItem>
+            <SelectItem value="중급 이상">중급 이상</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button
+        onClick={() => mutation.mutate({ targetField: field, jobPosting: jobPosting || undefined, tools, currentWorks, level })}
+        disabled={mutation.isPending || !field.trim() || tools.length === 0}
+        className="gap-2 w-full md:w-auto"
+      >
+        {mutation.isPending
+          ? <><Sparkles size={14} className="animate-spin" />전략 수립 중…</>
+          : <><BookOpen size={14} />포트폴리오 구성전략 받기</>}
+      </Button>
+
+      {result && (
+        <div className="space-y-4">
+          {/* 전략 요약 */}
+          {result.전략요약 && (
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="pt-4">
+                <p className="text-sm font-medium text-primary mb-1">전략 요약</p>
+                <p className="text-sm">{result.전략요약}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 핵심 어필 포인트 + 채용 키워드 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {result.핵심어필포인트 && (
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">핵심 어필 포인트</CardTitle></CardHeader>
+                <CardContent className="space-y-1">
+                  {result.핵심어필포인트.map((p, i) => (
+                    <div key={i} className="flex gap-2 text-xs"><span className="text-primary shrink-0">✓</span>{p}</div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+            {result.채용분야별키워드 && (
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm">채용분야 핵심 키워드</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-1">
+                    {result.채용분야별키워드.map((k, i) => <Badge key={i} variant="secondary" className="text-xs">{k}</Badge>)}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* 추천 구성 */}
+          {result.추천구성 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">추천 포트폴리오 구성</CardTitle></CardHeader>
+              <CardContent className="divide-y">
+                {result.추천구성.map((c) => (
+                  <div key={c.순서} className="py-3 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{c.순서}</div>
+                      <span className="font-medium text-sm">{c.작업물유형}</span>
+                      <Badge variant="outline" className="text-xs">{c.분량}</Badge>
+                      {c.AI활용권장 && <Badge className="text-xs bg-violet-100 text-violet-700 border-violet-200">AI 활용 권장</Badge>}
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-8">{c.목적}</p>
+                    <p className="text-xs text-primary pl-8">💡 {c.강조포인트}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 제작 우선순위 + 피해야 할 실수 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {result.제작우선순위 && (
+              <Card className="border-green-200">
+                <CardHeader className="pb-2"><CardTitle className="text-sm text-green-700">제작 우선순위</CardTitle></CardHeader>
+                <CardContent className="space-y-1">
+                  {result.제작우선순위.map((p, i) => (
+                    <div key={i} className="flex gap-2 text-xs"><span className="text-green-600 shrink-0">{i + 1}.</span>{p}</div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+            {result.피해야할실수 && (
+              <Card className="border-red-200">
+                <CardHeader className="pb-2"><CardTitle className="text-sm text-red-600">피해야 할 실수</CardTitle></CardHeader>
+                <CardContent className="space-y-1">
+                  {result.피해야할실수.map((m, i) => (
+                    <div key={i} className="flex gap-2 text-xs"><span className="text-red-500 shrink-0">✗</span>{m}</div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {result.예상심사기준 && (
+            <Card>
+              <CardContent className="pt-4 text-sm"><span className="font-medium">예상 심사 기준: </span><span className="text-muted-foreground">{result.예상심사기준}</span></CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── 메인 페이지 ─────────────────────────────────────────────────────────────
 
 export default function StudentAIAgents() {
@@ -1380,6 +1576,7 @@ export default function StudentAIAgents() {
             <TabsTrigger value="chat" className="gap-1.5"><MessageCircle size={14} /> 진로 상담</TabsTrigger>
             <TabsTrigger value="mycard" className="gap-1.5"><Briefcase size={14} /> 내 진로카드</TabsTrigger>
             <TabsTrigger value="career" className="gap-1.5"><Sparkles size={14} /> 기업 추천</TabsTrigger>
+            <TabsTrigger value="strategy" className="gap-1.5"><BookOpen size={14} /> 포폴 구성전략</TabsTrigger>
             <TabsTrigger value="coach" className="gap-1.5"><GraduationCap size={14} /> 포트폴리오 코치</TabsTrigger>
             <TabsTrigger value="score" className="gap-1.5"><Star size={14} /> 포트폴리오 점수</TabsTrigger>
             <TabsTrigger value="cover" className="gap-1.5"><FileText size={14} /> 자기소개서</TabsTrigger>
@@ -1395,6 +1592,7 @@ export default function StudentAIAgents() {
           <TabsContent value="chat" className="mt-6"><CareerChatTab /></TabsContent>
           <TabsContent value="mycard" className="mt-6"><MyGuidanceTab /></TabsContent>
           <TabsContent value="career" className="mt-6"><CareerGuidanceTab /></TabsContent>
+          <TabsContent value="strategy" className="mt-6"><PortfolioStrategyTab /></TabsContent>
           <TabsContent value="coach" className="mt-6"><PortfolioCoachTab /></TabsContent>
           <TabsContent value="score" className="mt-6"><PortfolioScoreTab /></TabsContent>
           <TabsContent value="cover" className="mt-6"><CoverLetterTab /></TabsContent>
