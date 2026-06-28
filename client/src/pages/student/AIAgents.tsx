@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Sparkles, Briefcase, FileSearch, BookOpen, Plus, X } from "lucide-react";
+import { Sparkles, Briefcase, FileSearch, BookOpen, Plus, X, MessageCircle, ClipboardList, CheckCircle2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── 공통 태그 입력 컴포넌트 ─────────────────────────────────────────────────
@@ -434,6 +435,362 @@ function PortfolioGuideTab() {
   );
 }
 
+// ─── C. 사전 설문 탭 ──────────────────────────────────────────────────────────
+
+const TOOL_OPTIONS = ["Photoshop", "Illustrator", "InDesign", "Figma", "XD", "Premiere Pro", "After Effects", "Final Cut", "Blender", "Midjourney", "DALL-E", "ChatGPT", "Claude"];
+const WORK_OPTIONS = ["상세페이지", "SNS 카드뉴스", "포스터/리플렛", "영상편집", "모션그래픽", "UI 화면설계", "브랜드 아이덴티티", "편집디자인", "유튜브 썸네일"];
+
+function SurveyTab() {
+  const [step, setStep] = useState(0);
+  const [tools, setTools] = useState<string[]>([]);
+  const [works, setWorks] = useState<string[]>([]);
+  const [aiUsage, setAiUsage] = useState("");
+  const [workType, setWorkType] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const mutation = trpc.aiAgent.submitSurvey.useMutation({
+    onSuccess: () => setSubmitted(true),
+    onError: (e) => toast.error(e.message),
+  });
+
+  const toggleItem = (list: string[], setList: (v: string[]) => void, item: string) => {
+    setList(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
+  };
+
+  const steps = [
+    {
+      title: "보유 툴을 선택해주세요",
+      content: (
+        <div className="flex flex-wrap gap-2">
+          {TOOL_OPTIONS.map((t) => (
+            <Badge
+              key={t}
+              variant={tools.includes(t) ? "default" : "outline"}
+              className="cursor-pointer text-sm py-1 px-3"
+              onClick={() => toggleItem(tools, setTools, t)}
+            >{t}</Badge>
+          ))}
+        </div>
+      ),
+      canNext: tools.length > 0,
+    },
+    {
+      title: "주요 작업물 유형을 선택해주세요",
+      content: (
+        <div className="flex flex-wrap gap-2">
+          {WORK_OPTIONS.map((w) => (
+            <Badge
+              key={w}
+              variant={works.includes(w) ? "default" : "outline"}
+              className="cursor-pointer text-sm py-1 px-3"
+              onClick={() => toggleItem(works, setWorks, w)}
+            >{w}</Badge>
+          ))}
+        </div>
+      ),
+      canNext: true,
+    },
+    {
+      title: "생성형 AI를 활용하고 있나요?",
+      content: (
+        <Select value={aiUsage} onValueChange={setAiUsage}>
+          <SelectTrigger><SelectValue placeholder="선택해주세요" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="자주 씁니다 (Claude, Midjourney 등)">자주 씁니다</SelectItem>
+            <SelectItem value="가끔 써봤어요">가끔 써봤어요</SelectItem>
+            <SelectItem value="아직 안 써봤어요">아직 안 써봤어요</SelectItem>
+          </SelectContent>
+        </Select>
+      ),
+      canNext: !!aiUsage,
+    },
+    {
+      title: "희망 근무 형태는?",
+      content: (
+        <Select value={workType} onValueChange={setWorkType}>
+          <SelectTrigger><SelectValue placeholder="선택해주세요" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="정규직">정규직</SelectItem>
+            <SelectItem value="프리랜서">프리랜서</SelectItem>
+            <SelectItem value="무관">무관 / 아직 모르겠어요</SelectItem>
+          </SelectContent>
+        </Select>
+      ),
+      canNext: !!workType,
+    },
+    {
+      title: "관심 있는 업종이 있나요?",
+      content: (
+        <Input
+          value={industry}
+          onChange={(e) => setIndustry(e.target.value)}
+          placeholder="패션, 뷰티, IT스타트업, 광고대행사… (없으면 무관)"
+        />
+      ),
+      canNext: true,
+    },
+  ];
+
+  if (submitted) {
+    const result = mutation.data?.guidanceResult as {
+      추천직무?: Array<{ 직무명: string; 이유: string }>;
+      취업처목록?: Array<{ 순위: number; 업종: string; 포지션: string; 추천이유: string; 준비포인트: string }>;
+      준비로드맵?: { 단기1개월: string; 중기3개월: string; 포트폴리오핵심: string };
+    } | undefined;
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-green-600">
+          <CheckCircle2 size={20} />
+          <span className="font-medium">설문 완료! AI 진로 분석 결과입니다.</span>
+        </div>
+        {result?.추천직무 && (
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-base">추천 직무</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              {result.추천직무.map((j, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  <Badge className="shrink-0">{j.직무명}</Badge>
+                  <p className="text-sm text-muted-foreground">{j.이유}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+        {result?.취업처목록 && (
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-base">맞춤 취업처</CardTitle></CardHeader>
+            <CardContent className="divide-y">
+              {result.취업처목록.map((c) => (
+                <div key={c.순위} className="py-3 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{c.순위}. {c.포지션}</span>
+                    <Badge variant="outline" className="text-xs">{c.업종}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{c.추천이유}</p>
+                  <p className="text-xs text-primary">💡 {c.준비포인트}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+        {result?.준비로드맵 && (
+          <Card>
+            <CardHeader className="pb-3"><CardTitle className="text-base">준비 로드맵</CardTitle></CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <p><span className="font-medium">단기(1개월):</span> {result.준비로드맵.단기1개월}</p>
+              <p><span className="font-medium">중기(3개월):</span> {result.준비로드맵.중기3개월}</p>
+              <p><span className="font-medium">포트폴리오 핵심:</span> {result.준비로드맵.포트폴리오핵심}</p>
+            </CardContent>
+          </Card>
+        )}
+        <Button variant="outline" onClick={() => { setSubmitted(false); setStep(0); setTools([]); setWorks([]); setAiUsage(""); setWorkType(""); setIndustry(""); }}>
+          다시 작성하기
+        </Button>
+      </div>
+    );
+  }
+
+  const currentStep = steps[step];
+  return (
+    <div className="space-y-6 max-w-lg">
+      <div className="flex gap-1">
+        {steps.map((_, i) => (
+          <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-primary" : "bg-muted"}`} />
+        ))}
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground mb-1">{step + 1} / {steps.length}</p>
+        <h3 className="font-medium text-base mb-4">{currentStep.title}</h3>
+        {currentStep.content}
+      </div>
+      <div className="flex gap-3">
+        {step > 0 && (
+          <Button variant="outline" onClick={() => setStep(step - 1)}>이전</Button>
+        )}
+        {step < steps.length - 1 ? (
+          <Button onClick={() => setStep(step + 1)} disabled={!currentStep.canNext} className="gap-1.5">
+            다음 <ChevronRight size={14} />
+          </Button>
+        ) : (
+          <Button
+            onClick={() => mutation.mutate({ tools, works, aiUsage, workType, industry: industry || "무관" })}
+            disabled={mutation.isPending}
+            className="gap-1.5"
+          >
+            {mutation.isPending ? <><Sparkles size={14} className="animate-spin" /> 분석 중…</> : <><Sparkles size={14} /> 제출하고 진로 분석 받기</>}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── A. 진로 상담 채팅 탭 ─────────────────────────────────────────────────────
+
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
+function CareerChatTab() {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { role: "assistant", content: "안녕하세요! 취업 진로 상담 AI입니다 😊\n궁금한 것을 편하게 물어보세요.\n\n예시: \"포트폴리오에 몇 개 작품을 넣어야 하나요?\", \"광고대행사 취업을 위해 뭘 준비해야 하나요?\"" },
+  ]);
+  const [input, setInput] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const mutation = trpc.aiAgent.careerChat.useMutation({
+    onSuccess: (data) => {
+      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const send = () => {
+    const text = input.trim();
+    if (!text || mutation.isPending) return;
+    const next: ChatMessage[] = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    setInput("");
+    mutation.mutate({
+      messages: next.slice(-10).map((m) => ({ role: m.role, content: m.content })),
+    });
+  };
+
+  return (
+    <div className="flex flex-col h-[520px]">
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 mb-4">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {mutation.isPending && (
+          <div className="flex justify-start">
+            <div className="bg-muted rounded-2xl px-4 py-2.5 text-sm text-muted-foreground">
+              <Sparkles size={14} className="animate-spin inline mr-1" /> 답변 작성 중…
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+      <div className="flex gap-2">
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="질문을 입력하세요… (Enter로 전송)"
+          rows={2}
+          className="resize-none flex-1"
+        />
+        <Button onClick={send} disabled={mutation.isPending || !input.trim()} className="self-end">전송</Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── B. 내 진로지도 카드 탭 ───────────────────────────────────────────────────
+
+const TRACK_LABELS: Record<string, string> = {
+  brand_design: "브랜드 디자인",
+  sns_marketing: "SNS 마케팅",
+  video_editing: "영상 편집",
+  character_goods: "캐릭터/굿즈",
+  ai_generation: "AI 생성 콘텐츠",
+  freelancer: "프리랜서",
+  undecided: "미정",
+};
+
+function MyGuidanceTab() {
+  const me = trpc.auth.me.useQuery();
+  const userId = me.data?.id;
+  const guidance = trpc.guidance.getCareerGuidance.useQuery(
+    { studentUserId: userId! },
+    { enabled: !!userId }
+  );
+
+  if (guidance.isLoading) return <div className="text-sm text-muted-foreground">불러오는 중…</div>;
+  if (!guidance.data) return (
+    <div className="text-center py-12 text-muted-foreground">
+      <Briefcase size={32} className="mx-auto mb-3 opacity-30" />
+      <p className="text-sm">아직 진로지도 카드가 없습니다.</p>
+      <p className="text-xs mt-1">사전 설문을 제출하면 선생님이 진로지도 카드를 작성해 드립니다.</p>
+    </div>
+  );
+
+  const card = guidance.data;
+  const checklist = (card.checklist as Record<string, boolean> | null) ?? {};
+  const checkItems = [
+    { key: "서류준비", label: "서류 준비" },
+    { key: "서류검토", label: "서류 검토" },
+    { key: "기업매칭", label: "기업 매칭" },
+    { key: "지원완료", label: "지원 완료" },
+    { key: "면접준비", label: "면접 준비" },
+    { key: "최종결과", label: "최종 결과" },
+  ];
+  const doneCount = checkItems.filter((c) => checklist[c.key]).length;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">내 진로 트랙</CardTitle>
+            {card.careerTrack && (
+              <Badge>{TRACK_LABELS[card.careerTrack] ?? card.careerTrack}</Badge>
+            )}
+          </div>
+        </CardHeader>
+        {card.guidanceMemo && (
+          <CardContent>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{card.guidanceMemo}</p>
+          </CardContent>
+        )}
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">진행 체크리스트</CardTitle>
+            <span className="text-sm text-muted-foreground">{doneCount} / {checkItems.length}</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-1.5 mt-2">
+            <div className="bg-primary h-1.5 rounded-full transition-all" style={{ width: `${(doneCount / checkItems.length) * 100}%` }} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-2">
+            {checkItems.map((c) => (
+              <div key={c.key} className={`flex items-center gap-2 text-sm p-2 rounded-lg ${checklist[c.key] ? "bg-green-50 text-green-700" : "text-muted-foreground"}`}>
+                <CheckCircle2 size={14} className={checklist[c.key] ? "text-green-600" : "opacity-30"} />
+                {c.label}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {card.aiRecommendations && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base">AI 추천 취업처</CardTitle></CardHeader>
+          <CardContent>
+            <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
+              {typeof card.aiRecommendations === "string"
+                ? card.aiRecommendations
+                : JSON.stringify(card.aiRecommendations, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 // ─── 메인 페이지 ─────────────────────────────────────────────────────────────
 
 export default function StudentAIAgents() {
@@ -442,14 +799,23 @@ export default function StudentAIAgents() {
       <div className="p-6 space-y-6 pb-20 lg:pb-6">
         <div>
           <p className="text-sm text-muted-foreground">
-            취업처 추천 · 채용공고 분석 · 포트폴리오 가이드를 AI로 즉시 받아보세요.
+            사전 설문 · 진로 상담 채팅 · 취업처 추천 · 채용공고 분석 · 포트폴리오 가이드
           </p>
         </div>
 
-        <Tabs defaultValue="career">
-          <TabsList className="w-full md:w-auto">
+        <Tabs defaultValue="survey">
+          <TabsList className="flex flex-wrap h-auto gap-1">
+            <TabsTrigger value="survey" className="gap-1.5">
+              <ClipboardList size={14} /> 사전 설문
+            </TabsTrigger>
+            <TabsTrigger value="chat" className="gap-1.5">
+              <MessageCircle size={14} /> 진로 상담
+            </TabsTrigger>
+            <TabsTrigger value="mycard" className="gap-1.5">
+              <Briefcase size={14} /> 내 진로카드
+            </TabsTrigger>
             <TabsTrigger value="career" className="gap-1.5">
-              <Briefcase size={14} /> 취업처 추천
+              <Sparkles size={14} /> 취업처 추천
             </TabsTrigger>
             <TabsTrigger value="job" className="gap-1.5">
               <FileSearch size={14} /> 채용공고 분석
@@ -459,6 +825,15 @@ export default function StudentAIAgents() {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="survey" className="mt-6">
+            <SurveyTab />
+          </TabsContent>
+          <TabsContent value="chat" className="mt-6">
+            <CareerChatTab />
+          </TabsContent>
+          <TabsContent value="mycard" className="mt-6">
+            <MyGuidanceTab />
+          </TabsContent>
           <TabsContent value="career" className="mt-6">
             <CareerGuidanceTab />
           </TabsContent>
