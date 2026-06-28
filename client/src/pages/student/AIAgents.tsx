@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
-import { Sparkles, Briefcase, FileSearch, BookOpen, Plus, X, MessageCircle, ClipboardList, CheckCircle2, ChevronRight } from "lucide-react";
+import { Sparkles, Briefcase, FileSearch, BookOpen, Plus, X, MessageCircle, ClipboardList, CheckCircle2, ChevronRight, GraduationCap, FileText, Mic, Map, Star, TrendingUp, CalendarCheck } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── 공통 태그 입력 컴포넌트 ─────────────────────────────────────────────────
@@ -791,6 +791,577 @@ function MyGuidanceTab() {
   );
 }
 
+// ─── 포트폴리오 코치 탭 ───────────────────────────────────────────────────────
+
+function PortfolioCoachTab() {
+  const [description, setDescription] = useState("");
+  const [tools, setTools] = useState<string[]>([]);
+  const [works, setWorks] = useState<string[]>([]);
+  const [targetJob, setTargetJob] = useState("");
+
+  const mutation = trpc.aiAgent.portfolioCoach.useMutation({ onError: (e) => toast.error(e.message) });
+
+  const result = mutation.data?.data as {
+    총점?: number;
+    강점?: Array<{ 항목: string; 설명: string }>;
+    개선점?: Array<{ 항목: string; 방법: string; 우선순위: string }>;
+    총평?: string;
+    다음단계?: string;
+  } | undefined;
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">포트폴리오 설명 *</label>
+        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="작업물 목록, 작업 방식, 강점이라고 생각하는 부분 등을 자유롭게 적어주세요…" rows={6} className="resize-none" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TagInput label="보유 툴 *" placeholder="Photoshop…" values={tools} onChange={setTools} />
+        <TagInput label="주요 작업물" placeholder="상세페이지…" values={works} onChange={setWorks} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">목표 직무</label>
+        <Input value={targetJob} onChange={(e) => setTargetJob(e.target.value)} placeholder="UI 디자이너, SNS 마케터…" />
+      </div>
+      <Button onClick={() => mutation.mutate({ description, tools, works, targetJob })} disabled={mutation.isPending || !description.trim() || tools.length === 0} className="gap-2">
+        {mutation.isPending ? <><Sparkles size={14} className="animate-spin" />분석 중…</> : <><GraduationCap size={14} />포트폴리오 코칭 받기</>}
+      </Button>
+
+      {result && (
+        <div className="space-y-4">
+          {result.총점 !== undefined && (
+            <Card>
+              <CardContent className="pt-6 flex items-center gap-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-primary">{result.총점}</div>
+                  <div className="text-xs text-muted-foreground">/ 100점</div>
+                </div>
+                <div className="flex-1">
+                  <div className="h-3 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${result.총점}%` }} />
+                  </div>
+                  {result.총평 && <p className="text-sm text-muted-foreground mt-2">{result.총평}</p>}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {result.강점 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base text-green-700">강점</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {result.강점.map((s, i) => (
+                  <div key={i} className="flex gap-3 items-start text-sm">
+                    <span className="text-green-500 shrink-0">✓</span>
+                    <div><span className="font-medium">{s.항목}</span> — {s.설명}</div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+          {result.개선점 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base text-orange-600">개선점</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {result.개선점.map((p, i) => (
+                  <div key={i} className="flex gap-3 items-start text-sm">
+                    <Badge variant="outline" className={`text-xs shrink-0 ${p.우선순위 === "높음" ? "border-red-300 text-red-600" : "border-amber-300 text-amber-600"}`}>{p.우선순위}</Badge>
+                    <div><span className="font-medium">{p.항목}</span> — {p.방법}</div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+          {result.다음단계 && (
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="pt-4 text-sm"><span className="font-medium">다음 단계: </span>{result.다음단계}</CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 자기소개서 탭 ────────────────────────────────────────────────────────────
+
+function CoverLetterTab() {
+  const [jobPosting, setJobPosting] = useState("");
+  const [tools, setTools] = useState<string[]>([]);
+  const [works, setWorks] = useState<string[]>([]);
+  const [selfIntro, setSelfIntro] = useState("");
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const mutation = trpc.aiAgent.coverLetter.useMutation({ onError: (e) => toast.error(e.message) });
+
+  const result = mutation.data?.data as {
+    지원동기?: string;
+    성장과정?: string;
+    역량및경험?: string;
+    입사후계획?: string;
+    총평?: string;
+  } | undefined;
+
+  const copy = (key: string, text: string) => {
+    navigator.clipboard.writeText(text).then(() => { setCopied(key); setTimeout(() => setCopied(null), 2000); });
+  };
+
+  const sections = result ? [
+    { key: "지원동기", label: "지원 동기", value: result.지원동기 },
+    { key: "성장과정", label: "성장 과정", value: result.성장과정 },
+    { key: "역량및경험", label: "역량 및 경험", value: result.역량및경험 },
+    { key: "입사후계획", label: "입사 후 계획", value: result.입사후계획 },
+  ] : [];
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">채용공고 내용 *</label>
+        <Textarea value={jobPosting} onChange={(e) => setJobPosting(e.target.value)} placeholder="채용공고 전문을 붙여넣어 주세요…" rows={6} className="resize-none" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TagInput label="보유 툴 *" placeholder="Photoshop…" values={tools} onChange={setTools} />
+        <TagInput label="주요 작업물" placeholder="상세페이지…" values={works} onChange={setWorks} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">나에 대해 간단히 (선택)</label>
+        <Textarea value={selfIntro} onChange={(e) => setSelfIntro(e.target.value)} placeholder="경력, 특기, 어필하고 싶은 점…" rows={3} className="resize-none" />
+      </div>
+      <Button onClick={() => mutation.mutate({ jobPosting, tools, works, selfIntro })} disabled={mutation.isPending || !jobPosting.trim() || tools.length === 0} className="gap-2">
+        {mutation.isPending ? <><Sparkles size={14} className="animate-spin" />작성 중…</> : <><FileText size={14} />자기소개서 초안 생성</>}
+      </Button>
+
+      {result && (
+        <div className="space-y-3">
+          {result.총평 && <p className="text-sm text-muted-foreground bg-muted rounded-lg p-3">{result.총평}</p>}
+          {sections.map(({ key, label, value }) => value && (
+            <Card key={key}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold">{label}</CardTitle>
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => copy(key, value)}>
+                    {copied === key ? "복사됨 ✓" : "복사"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{value}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 면접 준비 탭 ─────────────────────────────────────────────────────────────
+
+function InterviewPrepTab() {
+  const [jobTitle, setJobTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [tools, setTools] = useState<string[]>([]);
+  const [works, setWorks] = useState<string[]>([]);
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+
+  const mutation = trpc.aiAgent.interviewPrep.useMutation({ onError: (e) => toast.error(e.message) });
+
+  const result = mutation.data?.data as {
+    예상질문?: Array<{ 질문: string; 카테고리: string; 모범답변: string; 핵심포인트: string }>;
+  } | undefined;
+
+  const catColor: Record<string, string> = {
+    "자기소개": "bg-blue-100 text-blue-700",
+    "포트폴리오": "bg-purple-100 text-purple-700",
+    "직무역량": "bg-green-100 text-green-700",
+    "인성": "bg-amber-100 text-amber-700",
+    "상황대처": "bg-red-100 text-red-700",
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">지원 직무 *</label>
+          <Input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="UI 디자이너, SNS 마케터…" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">지원 회사 (선택)</label>
+          <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="회사명…" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TagInput label="보유 툴 *" placeholder="Photoshop…" values={tools} onChange={setTools} />
+        <TagInput label="주요 작업물" placeholder="상세페이지…" values={works} onChange={setWorks} />
+      </div>
+      <Button onClick={() => mutation.mutate({ jobTitle, company, tools, works })} disabled={mutation.isPending || !jobTitle.trim() || tools.length === 0} className="gap-2">
+        {mutation.isPending ? <><Sparkles size={14} className="animate-spin" />생성 중…</> : <><Mic size={14} />면접 질문 생성</>}
+      </Button>
+
+      {result?.예상질문 && (
+        <div className="space-y-2">
+          {result.예상질문.map((q, i) => (
+            <Card key={i} className="overflow-hidden">
+              <button className="w-full text-left px-4 py-3 flex items-center justify-between gap-2" onClick={() => setOpenIdx(openIdx === i ? null : i)}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <Badge className={`text-xs shrink-0 ${catColor[q.카테고리] ?? "bg-gray-100 text-gray-700"}`}>{q.카테고리}</Badge>
+                  <span className="text-sm font-medium truncate">Q{i + 1}. {q.질문}</span>
+                </div>
+                <ChevronRight size={14} className={`shrink-0 transition-transform ${openIdx === i ? "rotate-90" : ""}`} />
+              </button>
+              {openIdx === i && (
+                <CardContent className="pt-0 pb-4 space-y-2 border-t bg-muted/30">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{q.모범답변}</p>
+                  <p className="text-xs text-primary font-medium">💡 {q.핵심포인트}</p>
+                </CardContent>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 학습 로드맵 탭 ───────────────────────────────────────────────────────────
+
+function LearningRoadmapTab() {
+  const [tools, setTools] = useState<string[]>([]);
+  const [targetJob, setTargetJob] = useState("");
+  const [currentLevel, setCurrentLevel] = useState("");
+
+  const mutation = trpc.aiAgent.learningRoadmap.useMutation({ onError: (e) => toast.error(e.message) });
+
+  const result = mutation.data?.data as {
+    현재수준?: string;
+    목표직무?: string;
+    로드맵?: Array<{ 기간: string; 목표: string; 학습항목: string[]; 체크포인트: string }>;
+    추천리소스?: Array<{ 유형: string; 내용: string }>;
+  } | undefined;
+
+  return (
+    <div className="space-y-6">
+      <TagInput label="현재 보유 툴 *" placeholder="Photoshop…" values={tools} onChange={setTools} />
+      <div className="space-y-2">
+        <label className="text-sm font-medium">목표 직무 *</label>
+        <Input value={targetJob} onChange={(e) => setTargetJob(e.target.value)} placeholder="UI 디자이너, 영상 편집자…" />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">현재 수준 (선택)</label>
+        <Input value={currentLevel} onChange={(e) => setCurrentLevel(e.target.value)} placeholder="기초 포토샵만 가능, Figma 3개월 경험…" />
+      </div>
+      <Button onClick={() => mutation.mutate({ tools, targetJob, currentLevel })} disabled={mutation.isPending || tools.length === 0 || !targetJob.trim()} className="gap-2">
+        {mutation.isPending ? <><Sparkles size={14} className="animate-spin" />생성 중…</> : <><Map size={14} />학습 로드맵 받기</>}
+      </Button>
+
+      {result && (
+        <div className="space-y-4">
+          {result.로드맵 && (
+            <div className="relative space-y-0">
+              {result.로드맵.map((step, i) => (
+                <div key={i} className="flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0">{i + 1}</div>
+                    {i < result.로드맵!.length - 1 && <div className="w-0.5 bg-border flex-1 my-1" />}
+                  </div>
+                  <Card className="flex-1 mb-3">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">{step.기간}</Badge>
+                        <CardTitle className="text-sm">{step.목표}</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex flex-wrap gap-1">
+                        {step.학습항목.map((item, j) => <Badge key={j} variant="secondary" className="text-xs">{item}</Badge>)}
+                      </div>
+                      <p className="text-xs text-primary">✓ {step.체크포인트}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          )}
+          {result.추천리소스 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">추천 리소스</CardTitle></CardHeader>
+              <CardContent className="space-y-1">
+                {result.추천리소스.map((r, i) => (
+                  <div key={i} className="flex gap-2 text-sm">
+                    <Badge variant="outline" className="text-xs shrink-0">{r.유형}</Badge>
+                    <span className="text-muted-foreground">{r.내용}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 포트폴리오 점수 탭 ───────────────────────────────────────────────────────
+
+function PortfolioScoreTab() {
+  const [description, setDescription] = useState("");
+  const [tools, setTools] = useState<string[]>([]);
+  const [works, setWorks] = useState<string[]>([]);
+  const [targetJob, setTargetJob] = useState("");
+
+  const mutation = trpc.aiAgent.portfolioScore.useMutation({ onError: (e) => toast.error(e.message) });
+
+  const result = mutation.data?.data as {
+    총점?: number;
+    등급?: string;
+    항목별점수?: Array<{ 항목: string; 점수: number; 만점: number; 피드백: string }>;
+    한줄평?: string;
+    즉시개선?: string;
+  } | undefined;
+
+  const gradeColor: Record<string, string> = { A: "text-green-600", B: "text-blue-600", C: "text-amber-600", D: "text-red-600" };
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">포트폴리오 내용 *</label>
+        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="작업물 목록, 구성, 특징 등을 자세히 적어주세요…" rows={6} className="resize-none" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TagInput label="보유 툴 *" placeholder="Photoshop…" values={tools} onChange={setTools} />
+        <TagInput label="주요 작업물" placeholder="상세페이지…" values={works} onChange={setWorks} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">목표 직무 (선택)</label>
+        <Input value={targetJob} onChange={(e) => setTargetJob(e.target.value)} placeholder="UI 디자이너…" />
+      </div>
+      <Button onClick={() => mutation.mutate({ description, tools, works, targetJob })} disabled={mutation.isPending || !description.trim() || tools.length === 0} className="gap-2">
+        {mutation.isPending ? <><Sparkles size={14} className="animate-spin" />채점 중…</> : <><Star size={14} />포트폴리오 점수 받기</>}
+      </Button>
+
+      {result && (
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-6">
+                <div className="text-center shrink-0">
+                  <div className={`text-5xl font-black ${gradeColor[result.등급 ?? "C"] ?? ""}`}>{result.등급}</div>
+                  <div className="text-2xl font-bold text-primary">{result.총점}점</div>
+                </div>
+                <div className="flex-1 space-y-2">
+                  {result.한줄평 && <p className="text-sm font-medium">{result.한줄평}</p>}
+                  {result.즉시개선 && <p className="text-xs text-orange-600">즉시 개선: {result.즉시개선}</p>}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {result.항목별점수 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">항목별 점수</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {result.항목별점수.map((s, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{s.항목}</span>
+                      <span className="text-muted-foreground">{s.점수} / {s.만점}</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${(s.점수 / s.만점) * 100}%` }} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{s.피드백}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 취업 준비도 탭 ───────────────────────────────────────────────────────────
+
+function JobReadinessTab() {
+  const [tools, setTools] = useState<string[]>([]);
+  const [works, setWorks] = useState<string[]>([]);
+  const [targetJob, setTargetJob] = useState("");
+  const [hasResume, setHasResume] = useState(false);
+  const [hasPortfolio, setHasPortfolio] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+
+  const mutation = trpc.aiAgent.jobReadiness.useMutation({ onError: (e) => toast.error(e.message) });
+
+  const result = mutation.data?.data as {
+    준비도?: number;
+    등급?: string;
+    강점?: string[];
+    보완필요?: string[];
+    단계별현황?: Array<{ 단계: string; 상태: string; 설명: string }>;
+    이번주할일?: string[];
+  } | undefined;
+
+  const statusColor = { "완료": "text-green-600 bg-green-50", "진행중": "text-blue-600 bg-blue-50", "미시작": "text-muted-foreground bg-muted" };
+
+  return (
+    <div className="space-y-6">
+      <TagInput label="보유 툴 *" placeholder="Photoshop…" values={tools} onChange={setTools} />
+      <TagInput label="주요 작업물" placeholder="상세페이지…" values={works} onChange={setWorks} />
+      <div className="space-y-2">
+        <label className="text-sm font-medium">목표 직무 *</label>
+        <Input value={targetJob} onChange={(e) => setTargetJob(e.target.value)} placeholder="UI 디자이너, SNS 마케터…" />
+      </div>
+      <div className="flex flex-wrap gap-4">
+        {([["hasResume", "이력서 작성 완료", hasResume, setHasResume], ["hasPortfolio", "포트폴리오 완성", hasPortfolio, setHasPortfolio], ["hasApplied", "지원 경험 있음", hasApplied, setHasApplied]] as const).map(([key, label, val, setter]: any) => (
+          <label key={key} className="flex items-center gap-2 cursor-pointer text-sm">
+            <input type="checkbox" checked={val} onChange={(e) => setter(e.target.checked)} className="rounded" />
+            {label}
+          </label>
+        ))}
+      </div>
+      <Button onClick={() => mutation.mutate({ tools, works, targetJob, hasResume, hasPortfolio, hasApplied })} disabled={mutation.isPending || tools.length === 0 || !targetJob.trim()} className="gap-2">
+        {mutation.isPending ? <><Sparkles size={14} className="animate-spin" />분석 중…</> : <><TrendingUp size={14} />취업 준비도 확인</>}
+      </Button>
+
+      {result && (
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="pt-6 flex items-center gap-6">
+              <div className="text-center shrink-0">
+                <div className="text-4xl font-black text-primary">{result.준비도}</div>
+                <div className="text-xs text-muted-foreground">/ 100점</div>
+                <Badge className="mt-1 text-xs">{result.등급}</Badge>
+              </div>
+              <div className="flex-1">
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${result.준비도}%` }} />
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  {result.강점?.map((s, i) => <p key={i} className="text-xs text-green-600">✓ {s}</p>)}
+                  {result.보완필요?.map((s, i) => <p key={i} className="text-xs text-orange-500">△ {s}</p>)}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          {result.단계별현황 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">단계별 현황</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {result.단계별현황.map((s, i) => (
+                  <div key={i} className={`flex items-start gap-3 p-2 rounded-lg text-sm ${statusColor[s.상태 as keyof typeof statusColor] ?? "bg-muted"}`}>
+                    <span className="font-medium shrink-0 w-20">{s.단계}</span>
+                    <span className="text-xs shrink-0">[{s.상태}]</span>
+                    <span className="text-xs">{s.설명}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+          {result.이번주할일 && (
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader className="pb-3"><CardTitle className="text-base">이번 주 할 일</CardTitle></CardHeader>
+              <CardContent className="space-y-1">
+                {result.이번주할일.map((t, i) => (
+                  <div key={i} className="flex gap-2 text-sm items-start">
+                    <span className="text-primary shrink-0">→</span>
+                    <span>{t}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── 주간 리포트 탭 ───────────────────────────────────────────────────────────
+
+function WeeklyReportTab() {
+  const [tools, setTools] = useState<string[]>([]);
+  const [works, setWorks] = useState<string[]>([]);
+  const [thisWeekDone, setThisWeekDone] = useState("");
+  const [nextWeekPlan, setNextWeekPlan] = useState("");
+
+  const mutation = trpc.aiAgent.weeklyReport.useMutation({ onError: (e) => toast.error(e.message) });
+
+  const result = mutation.data?.data as {
+    이번주요약?: string;
+    성과?: string[];
+    잘한점?: string;
+    보완점?: string;
+    다음주목표?: string[];
+    응원메시지?: string;
+  } | undefined;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TagInput label="보유 툴" placeholder="Photoshop…" values={tools} onChange={setTools} />
+        <TagInput label="주요 작업물" placeholder="상세페이지…" values={works} onChange={setWorks} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">이번 주 한 일 *</label>
+        <Textarea value={thisWeekDone} onChange={(e) => setThisWeekDone(e.target.value)} placeholder="포트폴리오 작업물 2개 완성, Figma 강의 수강, 채용공고 5개 조회…" rows={4} className="resize-none" />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">다음 주 계획 (선택)</label>
+        <Textarea value={nextWeekPlan} onChange={(e) => setNextWeekPlan(e.target.value)} placeholder="이력서 작성 완료, 지원서 제출…" rows={2} className="resize-none" />
+      </div>
+      <Button onClick={() => mutation.mutate({ tools, works, thisWeekDone, nextWeekPlan })} disabled={mutation.isPending || !thisWeekDone.trim()} className="gap-2">
+        {mutation.isPending ? <><Sparkles size={14} className="animate-spin" />생성 중…</> : <><CalendarCheck size={14} />주간 리포트 받기</>}
+      </Button>
+
+      {result && (
+        <div className="space-y-4">
+          {result.이번주요약 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">이번 주 요약</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{result.이번주요약}</p>
+                {result.성과 && (
+                  <div className="mt-3 space-y-1">
+                    {result.성과.map((s, i) => <p key={i} className="text-sm text-green-600">✓ {s}</p>)}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {result.잘한점 && (
+              <Card className="border-green-200 bg-green-50">
+                <CardHeader className="pb-2"><CardTitle className="text-sm text-green-700">잘한 점</CardTitle></CardHeader>
+                <CardContent><p className="text-sm text-green-700">{result.잘한점}</p></CardContent>
+              </Card>
+            )}
+            {result.보완점 && (
+              <Card className="border-orange-200 bg-orange-50">
+                <CardHeader className="pb-2"><CardTitle className="text-sm text-orange-700">보완할 점</CardTitle></CardHeader>
+                <CardContent><p className="text-sm text-orange-700">{result.보완점}</p></CardContent>
+              </Card>
+            )}
+          </div>
+          {result.다음주목표 && (
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-base">다음 주 목표</CardTitle></CardHeader>
+              <CardContent className="space-y-1">
+                {result.다음주목표.map((t, i) => (
+                  <div key={i} className="flex gap-2 text-sm"><span className="text-primary">→</span><span>{t}</span></div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+          {result.응원메시지 && (
+            <Card className="bg-primary/5 border-primary/20 text-center">
+              <CardContent className="pt-4 text-sm font-medium text-primary">{result.응원메시지}</CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── 메인 페이지 ─────────────────────────────────────────────────────────────
 
 export default function StudentAIAgents() {
@@ -799,50 +1370,40 @@ export default function StudentAIAgents() {
       <div className="p-6 space-y-6 pb-20 lg:pb-6">
         <div>
           <p className="text-sm text-muted-foreground">
-            사전 설문 · 진로 상담 채팅 · 취업처 추천 · 채용공고 분석 · 포트폴리오 가이드
+            사전 설문 · 진로 상담 · 포트폴리오 코치 · 자기소개서 · 면접 준비 · 학습 로드맵 · 점수 · 준비도 · 주간 리포트
           </p>
         </div>
 
         <Tabs defaultValue="survey">
           <TabsList className="flex flex-wrap h-auto gap-1">
-            <TabsTrigger value="survey" className="gap-1.5">
-              <ClipboardList size={14} /> 사전 설문
-            </TabsTrigger>
-            <TabsTrigger value="chat" className="gap-1.5">
-              <MessageCircle size={14} /> 진로 상담
-            </TabsTrigger>
-            <TabsTrigger value="mycard" className="gap-1.5">
-              <Briefcase size={14} /> 내 진로카드
-            </TabsTrigger>
-            <TabsTrigger value="career" className="gap-1.5">
-              <Sparkles size={14} /> 취업처 추천
-            </TabsTrigger>
-            <TabsTrigger value="job" className="gap-1.5">
-              <FileSearch size={14} /> 채용공고 분석
-            </TabsTrigger>
-            <TabsTrigger value="portfolio" className="gap-1.5">
-              <BookOpen size={14} /> 포트폴리오 가이드
-            </TabsTrigger>
+            <TabsTrigger value="survey" className="gap-1.5"><ClipboardList size={14} /> 사전 설문</TabsTrigger>
+            <TabsTrigger value="chat" className="gap-1.5"><MessageCircle size={14} /> 진로 상담</TabsTrigger>
+            <TabsTrigger value="mycard" className="gap-1.5"><Briefcase size={14} /> 내 진로카드</TabsTrigger>
+            <TabsTrigger value="career" className="gap-1.5"><Sparkles size={14} /> 기업 추천</TabsTrigger>
+            <TabsTrigger value="coach" className="gap-1.5"><GraduationCap size={14} /> 포트폴리오 코치</TabsTrigger>
+            <TabsTrigger value="score" className="gap-1.5"><Star size={14} /> 포트폴리오 점수</TabsTrigger>
+            <TabsTrigger value="cover" className="gap-1.5"><FileText size={14} /> 자기소개서</TabsTrigger>
+            <TabsTrigger value="interview" className="gap-1.5"><Mic size={14} /> 면접 준비</TabsTrigger>
+            <TabsTrigger value="roadmap" className="gap-1.5"><Map size={14} /> 학습 로드맵</TabsTrigger>
+            <TabsTrigger value="readiness" className="gap-1.5"><TrendingUp size={14} /> 취업 준비도</TabsTrigger>
+            <TabsTrigger value="weekly" className="gap-1.5"><CalendarCheck size={14} /> 주간 리포트</TabsTrigger>
+            <TabsTrigger value="job" className="gap-1.5"><FileSearch size={14} /> 채용공고 분석</TabsTrigger>
+            <TabsTrigger value="portfolio" className="gap-1.5"><BookOpen size={14} /> 포트폴리오 가이드</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="survey" className="mt-6">
-            <SurveyTab />
-          </TabsContent>
-          <TabsContent value="chat" className="mt-6">
-            <CareerChatTab />
-          </TabsContent>
-          <TabsContent value="mycard" className="mt-6">
-            <MyGuidanceTab />
-          </TabsContent>
-          <TabsContent value="career" className="mt-6">
-            <CareerGuidanceTab />
-          </TabsContent>
-          <TabsContent value="job" className="mt-6">
-            <JobAnalysisTab />
-          </TabsContent>
-          <TabsContent value="portfolio" className="mt-6">
-            <PortfolioGuideTab />
-          </TabsContent>
+          <TabsContent value="survey" className="mt-6"><SurveyTab /></TabsContent>
+          <TabsContent value="chat" className="mt-6"><CareerChatTab /></TabsContent>
+          <TabsContent value="mycard" className="mt-6"><MyGuidanceTab /></TabsContent>
+          <TabsContent value="career" className="mt-6"><CareerGuidanceTab /></TabsContent>
+          <TabsContent value="coach" className="mt-6"><PortfolioCoachTab /></TabsContent>
+          <TabsContent value="score" className="mt-6"><PortfolioScoreTab /></TabsContent>
+          <TabsContent value="cover" className="mt-6"><CoverLetterTab /></TabsContent>
+          <TabsContent value="interview" className="mt-6"><InterviewPrepTab /></TabsContent>
+          <TabsContent value="roadmap" className="mt-6"><LearningRoadmapTab /></TabsContent>
+          <TabsContent value="readiness" className="mt-6"><JobReadinessTab /></TabsContent>
+          <TabsContent value="weekly" className="mt-6"><WeeklyReportTab /></TabsContent>
+          <TabsContent value="job" className="mt-6"><JobAnalysisTab /></TabsContent>
+          <TabsContent value="portfolio" className="mt-6"><PortfolioGuideTab /></TabsContent>
         </Tabs>
       </div>
     </AppLayout>
