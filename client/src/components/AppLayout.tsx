@@ -24,6 +24,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageSquarePlus,
   Settings,
   Users,
   FolderOpen,
@@ -158,6 +159,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "진로 진행 현황", href: "/student/career-progress", icon: <TrendingUp size={18} /> },
         { label: "내 프로필", href: "/student/profile", icon: <Settings size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
+        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
       ];
     case "professor":
       // 학과장(admin)과 동일한 권한 — 윤한정 교수님 포함
@@ -173,6 +175,8 @@ function getNavItems(role: string): NavItem[] {
         { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
         { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
+        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
+        { label: "피드백 결과 보기", href: "/admin/feedback-results", icon: <BarChart3 size={18} /> },
       ];
     case "company":
       return [
@@ -187,6 +191,8 @@ function getNavItems(role: string): NavItem[] {
         { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
         { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
+        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
+        { label: "피드백 결과 보기", href: "/admin/feedback-results", icon: <BarChart3 size={18} /> },
       ];
     case "admin":
       return [
@@ -201,6 +207,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
         { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
+        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
       ];
     default:
       return [];

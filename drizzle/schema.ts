@@ -699,3 +699,14 @@ export const jobCoachingRequests = mysqlTable("job_coaching_requests", {
 }));
 export type JobCoachingRequest = typeof jobCoachingRequests.$inferSelect;
 export type InsertJobCoachingRequest = typeof jobCoachingRequests.$inferInsert;
+
+// ─── 플랫폼 피드백 설문 ───────────────────────────────────────────────────────
+export const platformFeedback = mysqlTable("platform_feedback", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("userId"),
+  role: varchar("role", { length: 50 }),
+  name: varchar("name", { length: 100 }),
+  answers: json("answers"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PlatformFeedback = typeof platformFeedback.$inferSelect;

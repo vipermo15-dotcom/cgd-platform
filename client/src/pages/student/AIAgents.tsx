@@ -1563,30 +1563,32 @@ function PortfolioStrategyTab() {
 export default function StudentAIAgents() {
   return (
     <AppLayout title="AI 취업진로 에이전트">
-      <div className="p-6 space-y-6 pb-20 lg:pb-6">
+      <div className="p-3 lg:p-6 space-y-4 lg:space-y-6 pb-20 lg:pb-6">
         <div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs lg:text-sm text-muted-foreground">
             사전 설문 · 진로 상담 · 포트폴리오 코치 · 자기소개서 · 면접 준비 · 학습 로드맵 · 점수 · 준비도 · 주간 리포트
           </p>
         </div>
 
         <Tabs defaultValue="survey">
-          <TabsList className="flex flex-wrap h-auto gap-1">
-            <TabsTrigger value="survey" className="gap-1.5"><ClipboardList size={14} /> 사전 설문</TabsTrigger>
-            <TabsTrigger value="chat" className="gap-1.5"><MessageCircle size={14} /> 진로 상담</TabsTrigger>
-            <TabsTrigger value="mycard" className="gap-1.5"><Briefcase size={14} /> 내 진로카드</TabsTrigger>
-            <TabsTrigger value="career" className="gap-1.5"><Sparkles size={14} /> 기업 추천</TabsTrigger>
-            <TabsTrigger value="strategy" className="gap-1.5"><BookOpen size={14} /> 포폴 구성전략</TabsTrigger>
-            <TabsTrigger value="coach" className="gap-1.5"><GraduationCap size={14} /> 포트폴리오 코치</TabsTrigger>
-            <TabsTrigger value="score" className="gap-1.5"><Star size={14} /> 포트폴리오 점수</TabsTrigger>
-            <TabsTrigger value="cover" className="gap-1.5"><FileText size={14} /> 자기소개서</TabsTrigger>
-            <TabsTrigger value="interview" className="gap-1.5"><Mic size={14} /> 면접 준비</TabsTrigger>
-            <TabsTrigger value="roadmap" className="gap-1.5"><Map size={14} /> 학습 로드맵</TabsTrigger>
-            <TabsTrigger value="readiness" className="gap-1.5"><TrendingUp size={14} /> 취업 준비도</TabsTrigger>
-            <TabsTrigger value="weekly" className="gap-1.5"><CalendarCheck size={14} /> 주간 리포트</TabsTrigger>
-            <TabsTrigger value="job" className="gap-1.5"><FileSearch size={14} /> 채용공고 분석</TabsTrigger>
-            <TabsTrigger value="portfolio" className="gap-1.5"><BookOpen size={14} /> 포트폴리오 가이드</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-1 -mx-0.5 px-0.5">
+            <TabsList className="flex flex-nowrap h-auto gap-1 w-max">
+              <TabsTrigger value="survey" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><ClipboardList size={13} /> 사전 설문</TabsTrigger>
+              <TabsTrigger value="chat" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><MessageCircle size={13} /> 진로 상담</TabsTrigger>
+              <TabsTrigger value="mycard" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><Briefcase size={13} /> 내 진로카드</TabsTrigger>
+              <TabsTrigger value="career" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><Sparkles size={13} /> 기업 추천</TabsTrigger>
+              <TabsTrigger value="strategy" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><BookOpen size={13} /> 포폴 전략</TabsTrigger>
+              <TabsTrigger value="coach" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><GraduationCap size={13} /> 포폴 코치</TabsTrigger>
+              <TabsTrigger value="score" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><Star size={13} /> 포폴 점수</TabsTrigger>
+              <TabsTrigger value="cover" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><FileText size={13} /> 자기소개서</TabsTrigger>
+              <TabsTrigger value="interview" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><Mic size={13} /> 면접 준비</TabsTrigger>
+              <TabsTrigger value="roadmap" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><Map size={13} /> 학습 로드맵</TabsTrigger>
+              <TabsTrigger value="readiness" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><TrendingUp size={13} /> 취업 준비도</TabsTrigger>
+              <TabsTrigger value="weekly" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><CalendarCheck size={13} /> 주간 리포트</TabsTrigger>
+              <TabsTrigger value="job" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><FileSearch size={13} /> 공고 분석</TabsTrigger>
+              <TabsTrigger value="portfolio" className="gap-1 text-xs flex-shrink-0 whitespace-nowrap px-2.5"><BookOpen size={13} /> 포폴 가이드</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="survey" className="mt-6"><SurveyTab /></TabsContent>
           <TabsContent value="chat" className="mt-6"><CareerChatTab /></TabsContent>

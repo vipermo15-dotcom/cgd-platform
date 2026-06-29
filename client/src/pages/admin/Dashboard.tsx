@@ -101,7 +101,7 @@ export default function AdminDashboard() {
     <AppLayout title="관리자 대시보드">
       <OnboardingDialog />
 
-      <div className="p-6 space-y-5">
+      <div className="p-3 lg:p-6 space-y-4 lg:space-y-5">
 
         {/* 버전 + 업데이트 배너 */}
         {!bannerDismissed && (

@@ -59,6 +59,10 @@ const AdminEmploymentBanners = lazy(() => import("./pages/admin/EmploymentBanner
 const AdminJobCoaching = lazy(() => import("./pages/admin/JobCoaching"));
 const AdminAIMatching = lazy(() => import("./pages/admin/AIMatching"));
 
+// Shared pages
+const Feedback = lazy(() => import("./pages/Feedback"));
+const FeedbackResults = lazy(() => import("./pages/admin/FeedbackResults"));
+
 // Public pages
 const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
 const PublicResume = lazy(() => import("./pages/PublicResume"));
@@ -241,6 +245,14 @@ function Router() {
       </Route>
       <Route path="/admin/ai-matching">
         <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><AdminAIMatching /></RoleGuard>
+      </Route>
+
+      {/* Shared */}
+      <Route path="/feedback">
+        <RoleGuard allowedRoles={["student", "professor", "training_center", "company", "admin"]}><Feedback /></RoleGuard>
+      </Route>
+      <Route path="/admin/feedback-results">
+        <RoleGuard allowedRoles={["admin", "professor"]}><FeedbackResults /></RoleGuard>
       </Route>
 
       <Route path="/404" component={NotFound} />
