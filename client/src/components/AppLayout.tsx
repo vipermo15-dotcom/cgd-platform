@@ -160,17 +160,18 @@ function getNavItems(role: string): NavItem[] {
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
       ];
     case "professor":
+      // 학과장(admin)과 동일한 권한 — 윤한정 교수님 포함
       return [
-        { label: "대시보드", href: "/professor", icon: <LayoutDashboard size={18} /> },
-        { label: "학생 관리", href: "/professor/students", icon: <Users size={18} /> },
+        { label: "대시보드", href: "/admin", icon: <LayoutDashboard size={18} /> },
+        { label: "회원 관리", href: "/admin/users", icon: <Users size={18} /> },
+        { label: "공고 승인", href: "/admin/postings", icon: <CheckSquare size={18} /> },
         { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
-        { label: "서류 검토", href: "/professor/documents", icon: <FolderCheck size={18} /> },
         { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
+        { label: "AI 로그", href: "/admin/ai-logs", icon: <Activity size={18} /> },
         { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
         { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
         { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
         { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={18} /> },
-        { label: "통계 & 보고서", href: "/professor/stats", icon: <BarChart3 size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
       ];
     case "company":
@@ -209,10 +210,10 @@ function getNavItems(role: string): NavItem[] {
 function getRoleLabel(role: string) {
   const map: Record<string, string> = {
     student: "재학생",
-    professor: "학과장",
+    professor: "교수 (관리자)",
     company: "협력기업",
     training_center: "공동훈련센터",
-    admin: "관리자",
+    admin: "학과장 (관리자)",
   };
   return map[role] ?? role;
 }

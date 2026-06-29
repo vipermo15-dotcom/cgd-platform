@@ -51,11 +51,12 @@ const requireRole = (roles: string[], message: string) =>
     });
   });
 
+// admin + professor 모두 관리자 권한 허용 (윤한정 교수님 동일 권한 부여)
 export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
 
-    if (!ctx.user || ctx.user.role !== 'admin') {
+    if (!ctx.user || (ctx.user.role !== 'admin' && ctx.user.role !== 'professor')) {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
 
