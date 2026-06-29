@@ -208,6 +208,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
         { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
+        { label: "피드백 결과 보기", href: "/admin/feedback-results", icon: <BarChart3 size={18} /> },
       ];
     default:
       return [];
