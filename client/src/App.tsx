@@ -62,6 +62,7 @@ const AdminAIMatching = lazy(() => import("./pages/admin/AIMatching"));
 // Shared pages
 const Feedback = lazy(() => import("./pages/Feedback"));
 const FeedbackResults = lazy(() => import("./pages/admin/FeedbackResults"));
+const LearningHub = lazy(() => import("./pages/LearningHub"));
 
 // Public pages
 const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
@@ -253,6 +254,9 @@ function Router() {
       </Route>
       <Route path="/admin/feedback-results">
         <RoleGuard allowedRoles={["admin", "professor"]}><FeedbackResults /></RoleGuard>
+      </Route>
+      <Route path="/learning-hub">
+        <RoleGuard allowedRoles={["student", "professor", "training_center", "company", "admin"]}><LearningHub /></RoleGuard>
       </Route>
 
       <Route path="/404" component={NotFound} />
