@@ -87,6 +87,8 @@ export const userRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const data: any = { ...input };
+      // publicSlug 빈 문자열 → null (UNIQUE 제약조건 위반 방지)
+      if (data.publicSlug === "") data.publicSlug = null;
       if (input.employmentStatus === "취업확정") {
         data.employedAt = new Date();
         // 학과장에게 알림
