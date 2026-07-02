@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Sparkles, User, Building2, ClipboardList, ArrowRight, Wrench, Layers, FileText, Loader2, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import StudentDocumentsDialog from "./StudentDocumentsDialog";
 
 const REPO = "vipermo15-dotcom/cgd-ai-career-platform";
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
@@ -135,6 +136,7 @@ export default function CareerGuidance() {
   const { data: surveys = [] } = trpc.aiAgent.adminGetSurveys.useQuery();
 
   const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
+  const [docsOpen, setDocsOpen] = useState(false);
   const [careerTrack, setCareerTrack] = useState<CareerTrack>("undecided");
   const [guidanceNote, setGuidanceNote] = useState("");
   const [checklist, setChecklist] = useState(DEFAULT_CHECKLIST);
@@ -389,6 +391,9 @@ export default function CareerGuidance() {
                       <User className="w-4 h-4" /> {selectedStudent.name} 진로지도 카드
                     </CardTitle>
                     <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setDocsOpen(true)}>
+                        <FileText className="w-4 h-4 mr-1" /> 서류 수정
+                      </Button>
                       {guidance && (
                         <Button variant="outline" size="sm" onClick={handleLoadGuidance}>
                           저장된 데이터 불러오기
@@ -587,6 +592,14 @@ export default function CareerGuidance() {
                   </Tabs>
                 </CardContent>
               </Card>
+
+              {/* 면담 중 서류 즉시 수정 */}
+              <StudentDocumentsDialog
+                userId={selectedStudent.id}
+                userName={selectedStudent.name}
+                open={docsOpen}
+                onClose={() => setDocsOpen(false)}
+              />
             </>
           ) : (
             <Card>
