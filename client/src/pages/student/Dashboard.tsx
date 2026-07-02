@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
-import { FolderOpen, Bot, FileText, Briefcase, ClipboardList, ArrowRight, TrendingUp, Star, BookOpen } from "lucide-react";
+import { FolderOpen, Bot, FileText, Briefcase, ClipboardList, ArrowRight, TrendingUp, Star, BookOpen, CheckCircle2, Circle, ListChecks } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 
 const SCORE_LABELS: Record<string, string> = {
@@ -39,6 +39,16 @@ export default function StudentDashboard() {
     "탈락": "bg-red-100 text-red-700",
   };
 
+  // 다음 할 일 — 미완료 단계 자동 계산 (인지 부하 감소, 가이드형 흐름)
+  const steps = [
+    { done: !!(profile?.major && (profile?.skills as any)?.length), label: "프로필·스킬 입력", desc: "전공·기술 스택을 채우면 AI 추천 정확도 ↑", href: "/student/profile" },
+    { done: portfolios.length > 0, label: "포트폴리오 등록", desc: "작품을 올려 역량을 보여주세요", href: "/student/portfolio" },
+    { done: !!analysis, label: "AI 역량 분석 실행", desc: "내 강점·약점·추천 스킬 확인", href: "/student/ai-analysis" },
+    { done: applications.length > 0, label: "채용공고 지원", desc: "희망기업 매칭에서 맞춤 공고 찾기", href: "/student/job-matching" },
+  ];
+  const todo = steps.filter((s) => !s.done);
+  const doneCount = steps.length - todo.length;
+
   return (
     <AppLayout title="홈">
       <div className="p-6 space-y-6 pb-20 lg:pb-6">
@@ -56,6 +66,37 @@ export default function StudentDashboard() {
             </Badge>
           )}
         </div>
+
+        {/* 다음 할 일 — 가이드형 진행 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ListChecks size={18} className="text-primary" />
+              다음 할 일
+              <Badge variant="secondary" className="ml-1 font-normal">{doneCount}/{steps.length} 완료</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {todo.length === 0 ? (
+              <div className="flex items-center gap-2 text-sm text-emerald-600 py-2">
+                <CheckCircle2 size={18} /> 준비 단계를 모두 마쳤어요! 지원 현황을 관리해보세요.
+              </div>
+            ) : (
+              todo.map((s) => (
+                <Link key={s.href} href={s.href}>
+                  <div className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors cursor-pointer">
+                    <Circle size={18} className="text-muted-foreground shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{s.label}</p>
+                      <p className="text-xs text-muted-foreground truncate">{s.desc}</p>
+                    </div>
+                    <ArrowRight size={16} className="text-muted-foreground shrink-0" />
+                  </div>
+                </Link>
+              ))
+            )}
+          </CardContent>
+        </Card>
 
         {/* Quick stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
