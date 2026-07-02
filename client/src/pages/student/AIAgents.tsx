@@ -1590,20 +1590,20 @@ export default function StudentAIAgents() {
             </TabsList>
           </div>
 
-          <TabsContent value="survey" className="mt-6"><SurveyTab /></TabsContent>
-          <TabsContent value="chat" className="mt-6"><CareerChatTab /></TabsContent>
-          <TabsContent value="mycard" className="mt-6"><MyGuidanceTab /></TabsContent>
-          <TabsContent value="career" className="mt-6"><CareerGuidanceTab /></TabsContent>
-          <TabsContent value="strategy" className="mt-6"><PortfolioStrategyTab /></TabsContent>
-          <TabsContent value="coach" className="mt-6"><PortfolioCoachTab /></TabsContent>
-          <TabsContent value="score" className="mt-6"><PortfolioScoreTab /></TabsContent>
-          <TabsContent value="cover" className="mt-6"><CoverLetterTab /></TabsContent>
-          <TabsContent value="interview" className="mt-6"><InterviewPrepTab /></TabsContent>
-          <TabsContent value="roadmap" className="mt-6"><LearningRoadmapTab /></TabsContent>
-          <TabsContent value="readiness" className="mt-6"><JobReadinessTab /></TabsContent>
-          <TabsContent value="weekly" className="mt-6"><WeeklyReportTab /></TabsContent>
-          <TabsContent value="job" className="mt-6"><JobAnalysisTab /></TabsContent>
-          <TabsContent value="portfolio" className="mt-6"><PortfolioGuideTab /></TabsContent>
+          <TabsContent value="survey" forceMount className="mt-6 data-[state=inactive]:hidden"><SurveyTab /></TabsContent>
+          <TabsContent value="chat" forceMount className="mt-6 data-[state=inactive]:hidden"><CareerChatTab /></TabsContent>
+          <TabsContent value="mycard" forceMount className="mt-6 data-[state=inactive]:hidden"><MyGuidanceTab /></TabsContent>
+          <TabsContent value="career" forceMount className="mt-6 data-[state=inactive]:hidden"><CareerGuidanceTab /></TabsContent>
+          <TabsContent value="strategy" forceMount className="mt-6 data-[state=inactive]:hidden"><PortfolioStrategyTab /></TabsContent>
+          <TabsContent value="coach" forceMount className="mt-6 data-[state=inactive]:hidden"><PortfolioCoachTab /></TabsContent>
+          <TabsContent value="score" forceMount className="mt-6 data-[state=inactive]:hidden"><PortfolioScoreTab /></TabsContent>
+          <TabsContent value="cover" forceMount className="mt-6 data-[state=inactive]:hidden"><CoverLetterTab /></TabsContent>
+          <TabsContent value="interview" forceMount className="mt-6 data-[state=inactive]:hidden"><InterviewPrepTab /></TabsContent>
+          <TabsContent value="roadmap" forceMount className="mt-6 data-[state=inactive]:hidden"><LearningRoadmapTab /></TabsContent>
+          <TabsContent value="readiness" forceMount className="mt-6 data-[state=inactive]:hidden"><JobReadinessTab /></TabsContent>
+          <TabsContent value="weekly" forceMount className="mt-6 data-[state=inactive]:hidden"><WeeklyReportTab /></TabsContent>
+          <TabsContent value="job" forceMount className="mt-6 data-[state=inactive]:hidden"><JobAnalysisTab /></TabsContent>
+          <TabsContent value="portfolio" forceMount className="mt-6 data-[state=inactive]:hidden"><PortfolioGuideTab /></TabsContent>
         </Tabs>
       </div>
     </AppLayout>
