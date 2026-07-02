@@ -775,14 +775,14 @@ function MyGuidanceTab() {
         </CardContent>
       </Card>
 
-      {card.aiRecommendations && (
+      {card.recommendedCompanies && (
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base">AI 추천 취업처</CardTitle></CardHeader>
           <CardContent>
             <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
-              {typeof card.aiRecommendations === "string"
-                ? card.aiRecommendations
-                : JSON.stringify(card.aiRecommendations, null, 2)}
+              {typeof card.recommendedCompanies === "string"
+                ? card.recommendedCompanies
+                : JSON.stringify(card.recommendedCompanies, null, 2)}
             </pre>
           </CardContent>
         </Card>

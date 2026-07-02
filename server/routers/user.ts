@@ -269,6 +269,32 @@ export const userRouter = router({
       return { results };
     }),
 
+  // 관리자: 교육생 프로필 조회
+  adminGetStudentProfile: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ input }) => {
+      return getStudentProfile(input.userId);
+    }),
+
+  // 관리자: 교육생 프로필 수정
+  adminUpdateStudentProfile: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      studentId: z.string().optional(),
+      major: z.string().optional(),
+      phone: z.string().optional(),
+      bio: z.string().optional(),
+      skills: z.array(z.string()).optional(),
+      certificates: z.array(z.string()).optional(),
+      employmentStatus: z.enum(["준비중", "지원중", "취업확정", "미시작"]).optional(),
+      employedCompany: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { userId, ...data } = input;
+      await upsertStudentProfile(userId, data);
+      return { success: true };
+    }),
+
   // 관리자: 역할 변경
   adminUpdateRole: adminProcedure
     .input(z.object({ userId: z.number(), role: z.enum(["student", "professor", "company", "training_center", "admin", "user"]) }))

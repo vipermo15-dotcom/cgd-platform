@@ -1,16 +1,71 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Sparkles, User, CheckSquare, Building2, ChevronDown, ChevronUp, ClipboardList, ArrowRight, Wrench, Layers } from "lucide-react";
+import { Sparkles, User, Building2, ClipboardList, ArrowRight, Wrench, Layers, FileText, Loader2, ExternalLink } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+const REPO = "vipermo15-dotcom/cgd-ai-career-platform";
+const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
+
+const STUDENT_GUIDANCE_FILES: Record<string, { name: string; path: string }[]> = {
+  "김건우": [{ name: "진로지도 (최종)", path: "docs/김건우/진로지도-김건우-20260625-최종.md" }],
+  "김규연": [
+    { name: "진로지도", path: "docs/김규연/진로지도-김규연-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/김규연/포트폴리오가이드-김규연-20260625.md" },
+  ],
+  "김민지": [
+    { name: "진로지도", path: "docs/김민지/진로지도-포트폴리오가이드/진로지도-민지-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/김민지/진로지도-포트폴리오가이드/포트폴리오가이드-민지-20260625.md" },
+  ],
+  "김승희": [
+    { name: "진로지도", path: "docs/김승희/진로지도-김승희.md" },
+    { name: "포트폴리오가이드", path: "docs/김승희/포트폴리오가이드-김승희.md" },
+  ],
+  "박민서": [
+    { name: "진로지도", path: "docs/박민서/진로지도-박민서-20260625.md" },
+    { name: "이력서분석", path: "docs/박민서/진로지도-이력서분석-박민서-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/박민서/포트폴리오가이드-박민서-20260625.md" },
+  ],
+  "박세은": [{ name: "포트폴리오가이드", path: "docs/박세은/포트폴리오가이드-박세은.md" }],
+  "박소현": [
+    { name: "진로지도", path: "docs/박소현/진로지도-소현-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/박소현/포트폴리오가이드-소현-20260625.md" },
+  ],
+  "박연": [
+    { name: "진로지도", path: "docs/박연/진로지도-연-20260625.md" },
+    { name: "핸즈픽 분석", path: "docs/박연/진로지도-연-핸즈픽분석-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/박연/포트폴리오가이드-연-20260625.md" },
+  ],
+  "박홍덕": [{ name: "진로지도", path: "docs/박홍덕/진로지도-박홍덕-20260625.md" }],
+  "서두원": [{ name: "진로지도 종합", path: "docs/서두원/진로지도-서두원-종합문서-20260625.md" }],
+  "이윤정": [{ name: "진로지도", path: "docs/이윤정/진로지도_ 이윤정.md" }],
+  "이윤채": [{ name: "이력서분석", path: "docs/이윤채/이력서분석-이윤채-20260625.md" }],
+  "임효정": [
+    { name: "진로지도 가이드", path: "docs/임효정/진로지도-가이드-임효정.md" },
+    { name: "포트폴리오 가이드", path: "docs/임효정/포트폴리오-가이드-임효정.md" },
+  ],
+  "장아름": [
+    { name: "공고분석", path: "docs/장아름/공고분석-장아름-20260625.md" },
+    { name: "진로지도", path: "docs/장아름/진로지도-아름-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/장아름/포트폴리오가이드-아름-20260625.md" },
+  ],
+  "장혜정": [{ name: "포트폴리오가이드", path: "docs/장혜정/포트폴리오가이드-장혜정.md" }],
+  "정채원": [
+    { name: "진로지도", path: "docs/정채원/진로지도-정채원-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/정채원/포트폴리오가이드-정채원-20260625.md" },
+  ],
+  "조수정": [{ name: "진로지도 (최종)", path: "docs/조수정/진로지도-조수정-20260625-최종.md" }],
+  "황상민": [{ name: "진로지도 (최종)", path: "docs/황상민/진로지도-황상민-최종-20260625.md" }],
+};
 
 const CAREER_TRACKS = [
   { value: "brand_design", label: "브랜드 디자인" },
@@ -46,7 +101,7 @@ type SurveyRow = {
   guidanceId: number;
   studentUserId: number;
   careerTrack: string;
-  updatedAt: string;
+  updatedAt: string | Date;
   userName: string | null;
   surveyData: {
     tools: string[];
@@ -77,7 +132,7 @@ function convertToRecommendations(취업처목록?: SurveyRow["surveyData"] exte
 export default function CareerGuidance() {
   const { data: users = [] } = trpc.user.adminGetUsers.useQuery({ role: "student" });
   const students = (users as StudentItem[]).filter((u: any) => u.role === "student");
-  const { data: surveys = [], refetch: refetchSurveys } = trpc.aiAgent.adminGetSurveys.useQuery();
+  const { data: surveys = [] } = trpc.aiAgent.adminGetSurveys.useQuery();
 
   const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
   const [careerTrack, setCareerTrack] = useState<CareerTrack>("undecided");
@@ -88,6 +143,21 @@ export default function CareerGuidance() {
   >([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [guidancePath, setGuidancePath] = useState<string | null>(null);
+  const [guidanceContent, setGuidanceContent] = useState("");
+  const [guidanceLoading, setGuidanceLoading] = useState(false);
+
+  useEffect(() => {
+    if (!guidancePath) return;
+    setGuidanceLoading(true);
+    setGuidanceContent("");
+    const encoded = guidancePath.split("/").map(encodeURIComponent).join("/");
+    fetch(`${RAW_BASE}/${encoded}`)
+      .then((r) => { if (!r.ok) throw new Error("파일 없음"); return r.text(); })
+      .then(setGuidanceContent)
+      .catch(() => setGuidanceContent("파일을 불러올 수 없습니다."))
+      .finally(() => setGuidanceLoading(false));
+  }, [guidancePath]);
 
   const { data: guidance, refetch: refetchGuidance } = trpc.guidance.getCareerGuidance.useQuery(
     { studentUserId: selectedStudent?.id ?? 0 },
@@ -332,10 +402,11 @@ export default function CareerGuidance() {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="track">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                       <TabsTrigger value="track">진로 트랙</TabsTrigger>
                       <TabsTrigger value="checklist">체크리스트 ({completedCount}/{checklist.length})</TabsTrigger>
                       <TabsTrigger value="companies">취업처 추천</TabsTrigger>
+                      <TabsTrigger value="docs">진로지도 자료</TabsTrigger>
                     </TabsList>
 
                     {/* 진로 트랙 탭 */}
@@ -407,6 +478,67 @@ export default function CareerGuidance() {
                           />
                         </div>
                       </div>
+                    </TabsContent>
+
+                    {/* 진로지도 자료 탭 */}
+                    <TabsContent value="docs" className="mt-4">
+                      {(() => {
+                        const files = STUDENT_GUIDANCE_FILES[selectedStudent.name] ?? [];
+                        return files.length === 0 ? (
+                          <div className="text-center py-10 text-muted-foreground text-sm">
+                            <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                            <p>등록된 진로지도 자료가 없습니다.</p>
+                          </div>
+                        ) : (
+                          <div className="flex gap-3 h-[340px]">
+                            {/* 파일 목록 */}
+                            <div className="w-40 flex-shrink-0 space-y-1 overflow-y-auto">
+                              {files.map((f) => (
+                                <button
+                                  key={f.path}
+                                  onClick={() => setGuidancePath(f.path)}
+                                  className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center gap-2 ${
+                                    guidancePath === f.path
+                                      ? "bg-primary/10 text-primary font-semibold"
+                                      : "hover:bg-muted text-muted-foreground"
+                                  }`}
+                                >
+                                  <FileText size={12} className="flex-shrink-0" />
+                                  {f.name}
+                                </button>
+                              ))}
+                            </div>
+                            {/* 내용 뷰어 */}
+                            <div className="flex-1 border rounded-lg overflow-y-auto p-4 bg-muted/30">
+                              {!guidancePath && (
+                                <p className="text-xs text-muted-foreground text-center mt-10">좌측에서 파일을 선택하세요.</p>
+                              )}
+                              {guidanceLoading && (
+                                <div className="flex items-center justify-center mt-10">
+                                  <Loader2 size={20} className="animate-spin text-primary" />
+                                </div>
+                              )}
+                              {!guidanceLoading && guidanceContent && (
+                                <>
+                                  <div className="flex justify-end mb-2">
+                                    <a
+                                      href={`https://github.com/${REPO}/blob/main/${guidancePath}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                                    >
+                                      <ExternalLink size={11} /> GitHub에서 보기
+                                    </a>
+                                  </div>
+                                  <article className="prose prose-xs max-w-none prose-headings:text-gray-900 prose-a:text-blue-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded text-sm">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{guidanceContent}</ReactMarkdown>
+                                  </article>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </TabsContent>
 
                     {/* AI 취업처 추천 탭 */}

@@ -58,6 +58,7 @@ const AdminCareerGuidance = lazy(() => import("./pages/admin/CareerGuidance"));
 const AdminEmploymentBanners = lazy(() => import("./pages/admin/EmploymentBanners"));
 const AdminJobCoaching = lazy(() => import("./pages/admin/JobCoaching"));
 const AdminAIMatching = lazy(() => import("./pages/admin/AIMatching"));
+const StudentReadiness = lazy(() => import("./pages/admin/StudentReadiness"));
 
 // Shared pages
 const Feedback = lazy(() => import("./pages/Feedback"));
@@ -178,11 +179,11 @@ function Router() {
         <RoleGuard allowedRoles={["professor", "admin"]}><ProfessorDashboard /></RoleGuard>
       </Route>
       <Route path="/professor/students">
-        <RoleGuard allowedRoles={["professor", "admin"]}><ProfessorStudents /></RoleGuard>
+        <RoleGuard allowedRoles={["professor", "admin", "training_center"]}><ProfessorStudents /></RoleGuard>
       </Route>
       <Route path="/professor/students/:id">
         {(params) => (
-          <RoleGuard allowedRoles={["professor", "admin"]}><ProfessorStudentDetail /></RoleGuard>
+          <RoleGuard allowedRoles={["professor", "admin", "training_center"]}><ProfessorStudentDetail /></RoleGuard>
         )}
       </Route>
       <Route path="/professor/stats">
@@ -246,6 +247,9 @@ function Router() {
       </Route>
       <Route path="/admin/ai-matching">
         <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><AdminAIMatching /></RoleGuard>
+      </Route>
+      <Route path="/admin/student-readiness">
+        <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><StudentReadiness /></RoleGuard>
       </Route>
 
       {/* Shared */}

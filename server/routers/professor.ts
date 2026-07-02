@@ -11,7 +11,10 @@ import {
   getStudentFeedbacks,
   getStudentProfile,
   getUserById,
+  getDb,
 } from "../db";
+import { eq, sql } from "drizzle-orm";
+import { portfolios, coverLetters, careerGuidance } from "../../drizzle/schema";
 import { adminProcedure, professorProcedure, router } from "../_core/trpc";
 
 export const professorRouter = router({
@@ -28,6 +31,72 @@ export const professorRouter = router({
   // 직군별 취업 분포
   getCategoryStats: professorProcedure.query(async () => {
     return getEmploymentByCategory();
+  }),
+
+  // 취업 준비율 대시보드
+  getStudentsReadiness: professorProcedure.query(async () => {
+    const db = await getDb();
+    const students = await getAllStudents();
+    if (!db) return [];
+
+    const results = await Promise.all(
+      students.map(async ({ user, profile }) => {
+        const [portResult, clResult, guidanceResult] = await Promise.all([
+          db.select({ cnt: sql<number>`count(*)` }).from(portfolios).where(eq(portfolios.userId, user.id)),
+          db.select({ cnt: sql<number>`count(*)` }).from(coverLetters).where(eq(coverLetters.userId, user.id)),
+          db.select().from(careerGuidance).where(eq(careerGuidance.studentUserId, user.id)).limit(1),
+        ]);
+        const portfolioCount = Number(portResult[0]?.cnt ?? 0);
+        const coverLetterCount = Number(clResult[0]?.cnt ?? 0);
+        const guidance = guidanceResult[0] ?? null;
+
+        // 이력서/프로필 (20점)
+        let profileScore = 0;
+        if (profile?.bio) profileScore += 5;
+        if ((profile?.skills as string[] | null)?.length) profileScore += 5;
+        if (profile?.phone) profileScore += 5;
+        if (profile?.studentId) profileScore += 5;
+
+        // 자기소개서 (20점)
+        const coverLetterScore = coverLetterCount > 0 ? 20 : 0;
+
+        // 포트폴리오 (20점)
+        const portfolioScore = portfolioCount > 0 ? 20 : 0;
+
+        // 진로지도 (20점)
+        let guidanceScore = 0;
+        if (guidance?.careerTrack && guidance.careerTrack !== "undecided") guidanceScore += 10;
+        if (guidance?.guidanceNote) guidanceScore += 10;
+
+        // 취업활동 (20점)
+        const statusMap: Record<string, number> = { 미시작: 0, 준비중: 8, 지원중: 14, 취업확정: 20 };
+        const activityScore = statusMap[profile?.employmentStatus ?? "미시작"] ?? 0;
+
+        const total = profileScore + coverLetterScore + portfolioScore + guidanceScore + activityScore;
+
+        return {
+          userId: user.id,
+          name: user.name ?? "이름없음",
+          employmentStatus: profile?.employmentStatus ?? "미시작",
+          scores: {
+            profile: profileScore,
+            coverLetter: coverLetterScore,
+            portfolio: portfolioScore,
+            guidance: guidanceScore,
+            activity: activityScore,
+            total,
+          },
+          details: {
+            portfolioCount,
+            coverLetterCount,
+            careerTrack: guidance?.careerTrack ?? "undecided",
+            hasGuidanceNote: !!guidance?.guidanceNote,
+          },
+        };
+      })
+    );
+
+    return results.sort((a, b) => b.scores.total - a.scores.total);
   }),
 
   // 학생 목록

@@ -7,6 +7,75 @@ import { Button } from "../components/ui/button";
 const REPO = "vipermo15-dotcom/cgd-ai-career-platform";
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
 
+const STUDENT_GUIDANCE: { id: string; label: string; files: { name: string; path: string }[] }[] = [
+  { id: "김건우", label: "김건우", files: [
+    { name: "진로지도 (최종)", path: "docs/김건우/진로지도-김건우-20260625-최종.md" },
+  ]},
+  { id: "김규연", label: "김규연", files: [
+    { name: "진로지도", path: "docs/김규연/진로지도-김규연-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/김규연/포트폴리오가이드-김규연-20260625.md" },
+  ]},
+  { id: "김민지", label: "김민지", files: [
+    { name: "진로지도", path: "docs/김민지/진로지도-포트폴리오가이드/진로지도-민지-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/김민지/진로지도-포트폴리오가이드/포트폴리오가이드-민지-20260625.md" },
+  ]},
+  { id: "김승희", label: "김승희", files: [
+    { name: "진로지도", path: "docs/김승희/진로지도-김승희.md" },
+    { name: "포트폴리오가이드", path: "docs/김승희/포트폴리오가이드-김승희.md" },
+  ]},
+  { id: "박민서", label: "박민서", files: [
+    { name: "진로지도", path: "docs/박민서/진로지도-박민서-20260625.md" },
+    { name: "이력서분석", path: "docs/박민서/진로지도-이력서분석-박민서-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/박민서/포트폴리오가이드-박민서-20260625.md" },
+  ]},
+  { id: "박세은", label: "박세은", files: [
+    { name: "포트폴리오가이드", path: "docs/박세은/포트폴리오가이드-박세은.md" },
+  ]},
+  { id: "박소현", label: "박소현", files: [
+    { name: "진로지도", path: "docs/박소현/진로지도-소현-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/박소현/포트폴리오가이드-소현-20260625.md" },
+  ]},
+  { id: "박연", label: "박연", files: [
+    { name: "진로지도", path: "docs/박연/진로지도-연-20260625.md" },
+    { name: "핸즈픽 분석", path: "docs/박연/진로지도-연-핸즈픽분석-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/박연/포트폴리오가이드-연-20260625.md" },
+  ]},
+  { id: "박홍덕", label: "박홍덕", files: [
+    { name: "진로지도", path: "docs/박홍덕/진로지도-박홍덕-20260625.md" },
+  ]},
+  { id: "서두원", label: "서두원", files: [
+    { name: "진로지도 종합", path: "docs/서두원/진로지도-서두원-종합문서-20260625.md" },
+  ]},
+  { id: "이윤정", label: "이윤정", files: [
+    { name: "진로지도", path: "docs/이윤정/진로지도_ 이윤정.md" },
+  ]},
+  { id: "이윤채", label: "이윤채", files: [
+    { name: "이력서분석", path: "docs/이윤채/이력서분석-이윤채-20260625.md" },
+  ]},
+  { id: "임효정", label: "임효정", files: [
+    { name: "진로지도 가이드", path: "docs/임효정/진로지도-가이드-임효정.md" },
+    { name: "포트폴리오 가이드", path: "docs/임효정/포트폴리오-가이드-임효정.md" },
+  ]},
+  { id: "장아름", label: "장아름", files: [
+    { name: "공고분석", path: "docs/장아름/공고분석-장아름-20260625.md" },
+    { name: "진로지도", path: "docs/장아름/진로지도-아름-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/장아름/포트폴리오가이드-아름-20260625.md" },
+  ]},
+  { id: "장혜정", label: "장혜정", files: [
+    { name: "포트폴리오가이드", path: "docs/장혜정/포트폴리오가이드-장혜정.md" },
+  ]},
+  { id: "정채원", label: "정채원", files: [
+    { name: "진로지도", path: "docs/정채원/진로지도-정채원-20260625.md" },
+    { name: "포트폴리오가이드", path: "docs/정채원/포트폴리오가이드-정채원-20260625.md" },
+  ]},
+  { id: "조수정", label: "조수정", files: [
+    { name: "진로지도 (최종)", path: "docs/조수정/진로지도-조수정-20260625-최종.md" },
+  ]},
+  { id: "황상민", label: "황상민", files: [
+    { name: "진로지도 (최종)", path: "docs/황상민/진로지도-황상민-최종-20260625.md" },
+  ]},
+];
+
 const SECTIONS = [
   {
     id: "docs",
@@ -87,6 +156,11 @@ const SECTIONS = [
       { name: "Firecrawl 플로우", path: "workflow/Firecrawl.md" },
     ],
   },
+  {
+    id: "guidance",
+    label: "📂 교육생 진로지도",
+    students: STUDENT_GUIDANCE,
+  },
 ];
 
 type FileItem = { name: string; path: string };
@@ -99,7 +173,9 @@ function NavSection({ section, selected, onSelect }: {
   const [open, setOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState<string | null>(null);
 
-  if (section.weeks) {
+  const subItems = (section as any).weeks || (section as any).students;
+  if (subItems) {
+    const folderColor = (section as any).students ? "text-purple-400" : "text-blue-400";
     return (
       <div>
         <button
@@ -111,19 +187,19 @@ function NavSection({ section, selected, onSelect }: {
         </button>
         {open && (
           <div className="ml-2">
-            {section.weeks.map((week) => (
-              <div key={week.id}>
+            {subItems.map((item: any) => (
+              <div key={item.id}>
                 <button
                   className="flex items-center gap-2 w-full text-left px-3 py-1.5 rounded-lg hover:bg-gray-100 text-sm text-gray-600"
-                  onClick={() => setWeekOpen(weekOpen === week.id ? null : week.id)}
+                  onClick={() => setWeekOpen(weekOpen === item.id ? null : item.id)}
                 >
-                  <Folder size={13} className="text-blue-400" />
-                  {weekOpen === week.id ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                  {week.label}
+                  <Folder size={13} className={folderColor} />
+                  {weekOpen === item.id ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  {item.label}
                 </button>
-                {weekOpen === week.id && (
+                {weekOpen === item.id && (
                   <div className="ml-6">
-                    {week.files.map((f) => (
+                    {item.files.map((f: FileItem) => (
                       <button
                         key={f.path}
                         onClick={() => onSelect(f.path)}
@@ -186,7 +262,8 @@ export default function LearningHub() {
     setLoading(true);
     setError(null);
     setContent("");
-    fetch(`${RAW_BASE}/${selectedPath}`)
+    const encodedPath = selectedPath.split("/").map(encodeURIComponent).join("/");
+    fetch(`${RAW_BASE}/${encodedPath}`)
       .then((r) => {
         if (!r.ok) throw new Error("파일을 불러올 수 없습니다.");
         return r.text();

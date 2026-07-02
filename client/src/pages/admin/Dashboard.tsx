@@ -139,7 +139,7 @@ export default function AdminDashboard() {
             { label: "채용공고", value: stats?.totalPostings ?? 0, icon: <Briefcase size={18} />, color: "text-purple-500", bg: "bg-purple-50", href: "/admin/postings" },
             { label: "포트폴리오", value: stats?.totalPortfolios ?? 0, icon: <FileText size={18} />, color: "text-emerald-500", bg: "bg-emerald-50", href: "/admin/users" },
             { label: "AI 분석", value: stats?.totalAiAnalyses ?? 0, icon: <Bot size={18} />, color: "text-orange-500", bg: "bg-orange-50", href: "/admin/ai-logs" },
-            { label: "취업 확정", value: stats?.totalEmployed ?? 0, icon: <Award size={18} />, color: "text-green-500", bg: "bg-green-50", href: "/admin/employment-stats" },
+            { label: "취업 확정", value: stats?.employedStudents ?? 0, icon: <Award size={18} />, color: "text-green-500", bg: "bg-green-50", href: "/admin/employment-stats" },
             { label: "취업률", value: `${stats?.employmentRate ?? 0}%`, icon: <Trophy size={18} />, color: "text-amber-500", bg: "bg-amber-50", href: "/admin/employment-stats" },
           ].map((s) => (
             <Link key={s.label} href={s.href}>

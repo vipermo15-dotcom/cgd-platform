@@ -155,6 +155,7 @@ export const resumeRouter = router({
         title: z.string().min(1),
         content: z.string().min(1),
         jobPostingId: z.number().optional(),
+        pdfUrl: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -171,7 +172,7 @@ export const resumeRouter = router({
         }
         await db
           .update(coverLetters)
-          .set({ title: input.title, content: input.content, jobPostingId: input.jobPostingId })
+          .set({ title: input.title, content: input.content, jobPostingId: input.jobPostingId, pdfUrl: input.pdfUrl })
           .where(eq(coverLetters.id, input.id));
         return { id: input.id };
       } else {
@@ -180,6 +181,7 @@ export const resumeRouter = router({
           title: input.title,
           content: input.content,
           jobPostingId: input.jobPostingId,
+          pdfUrl: input.pdfUrl,
           isAiGenerated: false,
         });
         return { id: (result as any).insertId };

@@ -287,12 +287,31 @@ function CoverLetterTab() {
     onError: (e) => toast.error(e.message),
   });
 
-  const [editing, setEditing] = useState<{ id?: number; title: string; content: string } | null>(null);
+  const [editing, setEditing] = useState<{ id?: number; title: string; content: string; pdfUrl?: string } | null>(null);
+  const [clUploading, setClUploading] = useState(false);
+
+  const handleClFileUpload = async (file: File) => {
+    if (file.size > 50 * 1024 * 1024) { toast.error("파일 크기는 50MB 이하여야 합니다."); return; }
+    setClUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      setEditing((f) => f ? { ...f, pdfUrl: url } : null);
+      toast.success("PDF가 업로드되었습니다.");
+    } catch {
+      toast.error("파일 업로드에 실패했습니다.");
+    } finally {
+      setClUploading(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setEditing({ title: "", content: "" })} className="gap-2">
+        <Button onClick={() => setEditing({ title: "", content: "", pdfUrl: "" })} className="gap-2">
           <Plus className="w-4 h-4" /> 자기소개서 작성
         </Button>
       </div>
@@ -312,9 +331,26 @@ function CoverLetterTab() {
               <Label>내용</Label>
               <Textarea rows={12} placeholder="자기소개서 내용을 입력하세요..." value={editing.content} onChange={(e) => setEditing((f) => f ? { ...f, content: e.target.value } : null)} />
             </div>
+            <div className="space-y-1">
+              <Label>PDF 첨부 (선택)</Label>
+              {editing.pdfUrl ? (
+                <div className="flex items-center gap-2 p-2 border rounded bg-green-50">
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-green-700 flex-1">업로드 완료</span>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing((f) => f ? { ...f, pdfUrl: "" } : null)}>변경</Button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-3 border border-dashed rounded-lg p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                  <Upload className="w-5 h-5 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground">{clUploading ? "업로드 중..." : "PDF · DOC · DOCX 첨부 (최대 50MB)"}</span>
+                  <input type="file" accept=".pdf,.doc,.docx" className="hidden" disabled={clUploading}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleClFileUpload(f); }} />
+                </label>
+              )}
+            </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setEditing(null)}>취소</Button>
-              <Button onClick={() => saveMut.mutate({ id: editing.id, title: editing.title, content: editing.content })} disabled={saveMut.isPending}>
+              <Button onClick={() => saveMut.mutate({ id: editing.id, title: editing.title, content: editing.content, pdfUrl: editing.pdfUrl })} disabled={saveMut.isPending}>
                 {saveMut.isPending ? "저장 중..." : "저장"}
               </Button>
             </div>
@@ -385,7 +421,7 @@ function PortfolioTab() {
   const [uploading, setUploading] = useState(false);
 
   const handleFileUpload = async (file: File) => {
-    if (file.size > 16 * 1024 * 1024) { toast.error("파일 크기는 16MB 이하여야 합니다."); return; }
+    if (file.size > 50 * 1024 * 1024) { toast.error("파일 크기는 50MB 이하여야 합니다."); return; }
     setUploading(true);
     try {
       const formData = new FormData();
@@ -471,7 +507,7 @@ function PortfolioTab() {
                 ) : (
                   <label className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer hover:bg-muted/30 transition-colors">
                     <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                    <span className="text-sm text-muted-foreground">{uploading ? "업로드 중..." : "PDF 파일을 클릭하여 선택 (최대 16MB)"}</span>
+                    <span className="text-sm text-muted-foreground">{uploading ? "업로드 중..." : "PDF 파일을 클릭하여 선택 (최대 50MB)"}</span>
                     <input type="file" accept=".pdf" className="hidden" disabled={uploading}
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); }} />
                   </label>

@@ -44,7 +44,7 @@ async function startServer() {
   registerOAuthRoutes(app);
 
   // File upload endpoint for portfolio PDFs
-  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024 } });
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
   app.post("/api/upload", upload.single("file"), async (req: any, res: any) => {
     try {
       const user = await sdk.authenticateRequest(req).catch(() => null);

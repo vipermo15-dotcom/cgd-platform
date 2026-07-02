@@ -46,4 +46,6 @@ export const AI_LIMITS = {
   coverLetter: { windowMs: 10 * 60_000, max: 10, type: "cover_letter" } satisfies AiRateLimit,
   // 진로 취업처 추천(관리자/학과장이 학생별로 실행) → 10분에 20회
   recommend: { windowMs: 10 * 60_000, max: 20, type: "recommend" } satisfies AiRateLimit,
+  // 진로 상담 채팅: 대화형이라 빈번 → 10분에 30회
+  chat: { windowMs: 10 * 60_000, max: 30, type: "career_chat" } satisfies AiRateLimit,
 };

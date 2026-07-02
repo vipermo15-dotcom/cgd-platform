@@ -166,6 +166,7 @@ function getNavItems(role: string): NavItem[] {
       // 학과장(admin)과 동일한 권한 — 윤한정 교수님 포함
       return [
         { label: "대시보드", href: "/admin", icon: <LayoutDashboard size={18} /> },
+        { label: "취업 준비율", href: "/admin/student-readiness", icon: <TrendingUp size={18} /> },
         { label: "회원 관리", href: "/admin/users", icon: <Users size={18} /> },
         { label: "공고 승인", href: "/admin/postings", icon: <CheckSquare size={18} /> },
         { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
@@ -188,8 +189,12 @@ function getNavItems(role: string): NavItem[] {
     case "training_center":
       return [
         { label: "대시보드", href: "/training", icon: <LayoutDashboard size={18} /> },
+        { label: "취업 준비율", href: "/admin/student-readiness", icon: <TrendingUp size={18} /> },
+        { label: "교육생 관리 (열람)", href: "/professor/students", icon: <Users size={18} /> },
+        { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
+        { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
+        { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
         { label: "협력기업 관리", href: "/training/companies", icon: <Building2 size={18} /> },
-        { label: "AI 매칭", href: "/training/matching", icon: <Bot size={18} /> },
         { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
         { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
         { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
@@ -200,6 +205,7 @@ function getNavItems(role: string): NavItem[] {
     case "admin":
       return [
         { label: "대시보드", href: "/admin", icon: <LayoutDashboard size={18} /> },
+        { label: "취업 준비율", href: "/admin/student-readiness", icon: <TrendingUp size={18} /> },
         { label: "회원 관리", href: "/admin/users", icon: <Users size={18} /> },
         { label: "공고 승인", href: "/admin/postings", icon: <CheckSquare size={18} /> },
         { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },

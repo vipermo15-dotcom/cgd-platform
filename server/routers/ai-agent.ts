@@ -344,7 +344,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
       try {
         const response = await invokeLLM({ messages: llmMessages });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const reply = response.choices[0]?.message?.content ?? "죄송합니다, 다시 시도해주세요.";
+        const rawReply = response.choices[0]?.message?.content;
+        const reply = typeof rawReply === "string" ? rawReply : "죄송합니다, 다시 시도해주세요.";
         await createAiLog({ userId: ctx.user.id, type: "career_chat", tokensUsed, success: true });
         return { success: true, reply };
       } catch (error) {
@@ -440,7 +441,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
       try {
         const response = await invokeLLM({ messages: [{ role: "system", content: PORTFOLIO_COACH_PROMPT }, { role: "user", content: wrapUntrusted("PORTFOLIO", userMessage) }], response_format: { type: "json_object" } });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const data = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+        const rawContent = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
         await createAiLog({ userId: ctx.user.id, type: "portfolio_coach", tokensUsed, success: true });
         return { success: true, data };
       } catch (error) {
@@ -464,7 +466,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
       try {
         const response = await invokeLLM({ messages: [{ role: "system", content: COVER_LETTER_PROMPT }, { role: "user", content: userMessage }], response_format: { type: "json_object" } });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const data = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+        const rawContent = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
         await createAiLog({ userId: ctx.user.id, type: "cover_letter", tokensUsed, success: true });
         return { success: true, data };
       } catch (error) {
@@ -488,7 +491,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
       try {
         const response = await invokeLLM({ messages: [{ role: "system", content: INTERVIEW_PREP_PROMPT }, { role: "user", content: wrapUntrusted("STUDENT_INFO", userMessage) }], response_format: { type: "json_object" } });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const data = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+        const rawContent = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
         await createAiLog({ userId: ctx.user.id, type: "interview_prep", tokensUsed, success: true });
         return { success: true, data };
       } catch (error) {
@@ -511,7 +515,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
       try {
         const response = await invokeLLM({ messages: [{ role: "system", content: LEARNING_ROADMAP_PROMPT }, { role: "user", content: wrapUntrusted("STUDENT_INFO", userMessage) }], response_format: { type: "json_object" } });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const data = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+        const rawContent = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
         await createAiLog({ userId: ctx.user.id, type: "learning_roadmap", tokensUsed, success: true });
         return { success: true, data };
       } catch (error) {
@@ -535,7 +540,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
       try {
         const response = await invokeLLM({ messages: [{ role: "system", content: PORTFOLIO_SCORE_PROMPT }, { role: "user", content: wrapUntrusted("PORTFOLIO", userMessage) }], response_format: { type: "json_object" } });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const data = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+        const rawContent = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
         await createAiLog({ userId: ctx.user.id, type: "portfolio_score", tokensUsed, success: true });
         return { success: true, data };
       } catch (error) {
@@ -561,7 +567,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
       try {
         const response = await invokeLLM({ messages: [{ role: "system", content: JOB_READINESS_PROMPT }, { role: "user", content: wrapUntrusted("STUDENT_INFO", userMessage) }], response_format: { type: "json_object" } });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const data = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+        const rawContent = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
         await createAiLog({ userId: ctx.user.id, type: "job_readiness", tokensUsed, success: true });
         return { success: true, data };
       } catch (error) {
@@ -585,7 +592,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
       try {
         const response = await invokeLLM({ messages: [{ role: "system", content: WEEKLY_REPORT_PROMPT }, { role: "user", content: wrapUntrusted("STUDENT_INFO", userMessage) }], response_format: { type: "json_object" } });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const data = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+        const rawContent = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
         await createAiLog({ userId: ctx.user.id, type: "weekly_report", tokensUsed, success: true });
         return { success: true, data };
       } catch (error) {
@@ -622,7 +630,8 @@ ${UNTRUSTED_DATA_NOTICE}`;
           response_format: { type: "json_object" },
         });
         tokensUsed = response.usage?.total_tokens ?? 0;
-        const data = JSON.parse(response.choices[0]?.message?.content ?? "{}");
+        const rawContent = response.choices[0]?.message?.content;
+        const data = JSON.parse(typeof rawContent === "string" ? rawContent : "{}");
         await createAiLog({ userId: ctx.user.id, type: "portfolio_strategy", tokensUsed, success: true });
         return { success: true, data };
       } catch (error) {

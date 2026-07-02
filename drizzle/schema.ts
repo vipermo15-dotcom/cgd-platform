@@ -235,6 +235,7 @@ export const coverLetters = mysqlTable("cover_letters", {
   content: text("content").notNull(),
   isAiGenerated: boolean("isAiGenerated").default(false).notNull(),
   tokensUsed: int("tokensUsed").default(0),
+  pdfUrl: text("pdfUrl"),
   // 단계별 승인 흐름
   approvalStep: mysqlEnum("approvalStep", [
     "draft",

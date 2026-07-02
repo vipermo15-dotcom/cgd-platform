@@ -310,7 +310,7 @@ export default function Feedback() {
     e.preventDefault();
     const combined: Record<string, unknown> = { ...answers };
     for (const [k, arr] of Object.entries(multiAnswers)) combined[k] = arr.join(", ");
-    submitMutation.mutate({ role: ROLE_LABELS[role] ?? role, name: user?.name, answers: combined });
+    submitMutation.mutate({ role: ROLE_LABELS[role] ?? role, name: user?.name ?? undefined, answers: combined });
   };
 
   if (submitted) {

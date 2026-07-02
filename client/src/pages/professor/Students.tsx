@@ -11,6 +11,7 @@ import { Search, Star, MessageSquare, Eye } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const STATUS_COLORS: Record<string, string> = {
   "취업확정": "bg-emerald-100 text-emerald-700",
@@ -20,6 +21,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function ProfessorStudents() {
+  const { user } = useAuth();
+  const isReadOnly = user?.role === "training_center";
   const utils = trpc.useUtils();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("전체");
@@ -98,17 +101,19 @@ export default function ProfessorStudents() {
                     <div className="flex gap-2">
                       <Link href={`/professor/students/${user.id}`}>
                         <Button size="sm" variant="outline" className="gap-1">
-                          <Eye size={14} /> 상세
+                          <Eye size={14} /> {isReadOnly ? "열람" : "상세"}
                         </Button>
                       </Link>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1"
-                        onClick={() => setFeedbackStudent(item)}
-                      >
-                        <MessageSquare size={14} /> 피드백
-                      </Button>
+                      {!isReadOnly && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1"
+                          onClick={() => setFeedbackStudent(item)}
+                        >
+                          <MessageSquare size={14} /> 피드백
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
