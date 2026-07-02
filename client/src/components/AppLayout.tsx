@@ -229,6 +229,44 @@ function getNavItems(role: string): NavItem[] {
   }
 }
 
+// ─── 사이드바 그룹(접이식) ────────────────────────────────────────────────────
+type NavGroup = { title?: string; items: NavItem[] };
+
+// 교육생: 유사 기능을 6개 그룹으로 묶어 인지 부하를 줄인다(기존 페이지·URL 유지).
+function getNavGroups(role: string): NavGroup[] {
+  if (role === "student") {
+    return [
+      { items: [{ label: "홈", href: "/student", icon: <Home size={18} /> }] },
+      { title: "내 서류", items: [
+        { label: "포트폴리오 관리", href: "/student/portfolio", icon: <FolderOpen size={18} /> },
+        { label: "서류 등록 센터", href: "/student/documents", icon: <FolderCheck size={18} /> },
+      ] },
+      { title: "AI 취업지원", items: [
+        { label: "AI 취업진로 에이전트", href: "/student/ai-agents", icon: <Sparkles size={18} /> },
+        { label: "AI 역량 분석", href: "/student/ai-analysis", icon: <Bot size={18} /> },
+        { label: "AI 자기소개서", href: "/student/cover-letter", icon: <FileText size={18} /> },
+      ] },
+      { title: "채용·지원", items: [
+        { label: "채용공고", href: "/student/jobs", icon: <Briefcase size={18} /> },
+        { label: "희망기업 매칭", href: "/student/job-matching", icon: <Target size={18} /> },
+        { label: "채용공고 첨삭", href: "/student/job-coaching", icon: <PencilLine size={18} /> },
+        { label: "지원 현황", href: "/student/applications", icon: <ClipboardList size={18} /> },
+      ] },
+      { title: "진로 진행", items: [
+        { label: "진로 진행 현황", href: "/student/career-progress", icon: <TrendingUp size={18} /> },
+      ] },
+      { title: "기타", items: [
+        { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
+        { label: "내 프로필", href: "/student/profile", icon: <Settings size={18} /> },
+        { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
+        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
+      ] },
+    ];
+  }
+  // 그 외 역할은 기존 평면 메뉴 유지
+  return [{ items: getNavItems(role) }];
+}
+
 function getRoleLabel(role: string) {
   const map: Record<string, string> = {
     student: "재학생",
@@ -254,7 +292,9 @@ function getRoleColor(role: string) {
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
-  const navItems = getNavItems(user?.role ?? "");
+  const navGroups = getNavGroups(user?.role ?? "");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleGroup = (title: string) => setCollapsed((p) => ({ ...p, [title]: !p[title] }));
 
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
@@ -287,26 +327,43 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       {/* Navigation */}
       <ScrollArea className="flex-1 py-3">
         <nav className="px-3 space-y-1">
-          {navItems.map((item) => {
-            const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+          {navGroups.map((group, gi) => {
+            const isOpen = group.title ? !collapsed[group.title] : true;
+            const renderItem = (item: NavItem) => {
+              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                    isActive
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <Badge className="ml-auto text-xs bg-red-500 text-white">{item.badge}</Badge>
+                  )}
+                </Link>
+              );
+            };
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                  isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              <div key={group.title ?? `g${gi}`} className="space-y-1">
+                {group.title && (
+                  <button
+                    onClick={() => toggleGroup(group.title!)}
+                    className="flex items-center gap-1.5 w-full px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
+                  >
+                    <ChevronDown size={12} className={cn("transition-transform", !isOpen && "-rotate-90")} />
+                    {group.title}
+                  </button>
                 )}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-                {item.badge && (
-                  <Badge className="ml-auto text-xs bg-red-500 text-white">{item.badge}</Badge>
-                )}
-              </Link>
+                {isOpen && group.items.map(renderItem)}
+              </div>
             );
           })}
         </nav>
