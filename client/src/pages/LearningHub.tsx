@@ -173,7 +173,8 @@ function NavSection({ section, selected, onSelect }: {
   const [open, setOpen] = useState(false);
   const [weekOpen, setWeekOpen] = useState<string | null>(null);
 
-  const subItems = (section as any).weeks || (section as any).students;
+  const rawSub = (section as any).weeks || (section as any).students;
+  const subItems: any[] | null = Array.isArray(rawSub) ? rawSub : rawSub ? [] : null;
   if (subItems) {
     const folderColor = (section as any).students ? "text-purple-400" : "text-blue-400";
     return (
@@ -199,7 +200,7 @@ function NavSection({ section, selected, onSelect }: {
                 </button>
                 {weekOpen === item.id && (
                   <div className="ml-6">
-                    {item.files.map((f: FileItem) => (
+                    {(Array.isArray(item.files) ? item.files : []).map((f: FileItem) => (
                       <button
                         key={f.path}
                         onClick={() => onSelect(f.path)}
@@ -232,7 +233,7 @@ function NavSection({ section, selected, onSelect }: {
       </button>
       {open && (
         <div className="ml-2">
-          {(section.files as FileItem[]).map((f) => (
+          {(Array.isArray(section.files) ? (section.files as FileItem[]) : []).map((f) => (
             <button
               key={f.path}
               onClick={() => onSelect(f.path)}
