@@ -58,6 +58,7 @@ const AdminCareerGuidance = lazy(() => import("./pages/admin/CareerGuidance"));
 const AdminEmploymentBanners = lazy(() => import("./pages/admin/EmploymentBanners"));
 const AdminJobCoaching = lazy(() => import("./pages/admin/JobCoaching"));
 const AdminAIMatching = lazy(() => import("./pages/admin/AIMatching"));
+const AdminFollowUp = lazy(() => import("./pages/admin/FollowUp"));
 const StudentReadiness = lazy(() => import("./pages/admin/StudentReadiness"));
 
 // Shared pages
@@ -247,6 +248,9 @@ function Router() {
       </Route>
       <Route path="/admin/ai-matching">
         <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><AdminAIMatching /></RoleGuard>
+      </Route>
+      <Route path="/admin/follow-up">
+        <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><AdminFollowUp /></RoleGuard>
       </Route>
       <Route path="/admin/student-readiness">
         <RoleGuard allowedRoles={["admin", "professor", "training_center"]}><StudentReadiness /></RoleGuard>

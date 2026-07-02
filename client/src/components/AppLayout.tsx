@@ -39,6 +39,7 @@ import {
   Target,
   PencilLine,
   Sparkles,
+  HeartHandshake,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -175,6 +176,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
         { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
         { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
+        { label: "사후지도", href: "/admin/follow-up", icon: <HeartHandshake size={18} /> },
         { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={18} /> },
         { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
@@ -194,6 +196,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
         { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
         { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
+        { label: "사후지도", href: "/admin/follow-up", icon: <HeartHandshake size={18} /> },
         { label: "협력기업 관리", href: "/training/companies", icon: <Building2 size={18} /> },
         { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
         { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
@@ -214,6 +217,7 @@ function getNavItems(role: string): NavItem[] {
         { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
         { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
         { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
+        { label: "사후지도", href: "/admin/follow-up", icon: <HeartHandshake size={18} /> },
         { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={18} /> },
         { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
         { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },

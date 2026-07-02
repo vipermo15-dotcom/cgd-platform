@@ -480,6 +480,34 @@ JSON 배열 형식으로만 응답하세요:
       }
     }),
 
+  // 사후지도 대상 목록 — 취업확정 학생 + 추적 정보 (학과장/관리자/공동훈련센터)
+  listFollowUp: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return [];
+    if (ctx.user.role !== "admin" && ctx.user.role !== "professor" && ctx.user.role !== "training_center")
+      throw new TRPCError({ code: "FORBIDDEN" });
+
+    const employed = await db
+      .select({
+        studentUserId: studentProfiles.userId,
+        name: users.name,
+        companyName: studentProfiles.employedCompany,
+        employedAt: studentProfiles.employedAt,
+      })
+      .from(studentProfiles)
+      .innerJoin(users, eq(users.id, studentProfiles.userId))
+      .where(eq(studentProfiles.employmentStatus, "취업확정"))
+      .orderBy(desc(studentProfiles.employedAt));
+
+    const tracking = await db.select().from(employmentTracking);
+    const trackMap = new Map(tracking.map((t) => [t.studentUserId, t]));
+
+    return employed.map((e) => ({
+      ...e,
+      tracking: trackMap.get(e.studentUserId) ?? null,
+    }));
+  }),
+
   // ─── 취업 축하 배너 ─────────────────────────────────────────────────────────
 
   // 활성 배너 목록 (최근 5건)
