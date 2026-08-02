@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
+import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Sparkles, User, Building2, ClipboardList, ArrowRight, Wrench, Layers, FileText, Loader2, ExternalLink } from "lucide-react";
+import { Sparkles, User, Building2, ClipboardList, ArrowRight, Wrench, Layers, FileText, Loader2, ExternalLink, ListChecks, Link2, Send, MessageSquare } from "lucide-react";
+
+const WORKFLOW_URL =
+  "https://vipermo15-dotcom.github.io/cgd-ai-career-platform/docs/portfolio-workflow.html";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import StudentDocumentsDialog from "./StudentDocumentsDialog";
@@ -110,6 +114,9 @@ type SurveyRow = {
     aiUsage: string;
     workType: string;
     industry: string;
+    desiredSalary?: string;
+    desiredLocation?: string;
+    availability?: string;
     submittedAt: string;
     guidanceResult?: {
       추천직무?: Array<{ 직무명: string; 이유: string }>;
@@ -128,6 +135,202 @@ function convertToRecommendations(취업처목록?: SurveyRow["surveyData"] exte
     reason: `${c.추천이유} | 준비: ${c.준비포인트}`,
     matchScore: 80,
   }));
+}
+
+// ─── 진로 매칭 자료 탭 (이력서·자소서·랜딩페이지·희망 취업처 등록 + 누적 히스토리/댓글) ──
+function MatchingMaterialsTab({ studentUserId }: { studentUserId: number }) {
+  const utils = trpc.useUtils();
+  const { data: docs, isLoading: docsLoading } = trpc.resume.adminGetStudentDocuments.useQuery({ studentUserId });
+  const { data: records = [], isLoading: recordsLoading } = trpc.careerMatching.getMatchingRecords.useQuery({ studentUserId });
+
+  const [coverLetterId, setCoverLetterId] = useState<string>("");
+  const [portfolioId, setPortfolioId] = useState<string>("");
+  const [desiredEmployerLink, setDesiredEmployerLink] = useState("");
+  const [note, setNote] = useState("");
+
+  const create = trpc.careerMatching.createMatchingRecord.useMutation({
+    onSuccess: () => {
+      utils.careerMatching.getMatchingRecords.invalidate({ studentUserId });
+      toast.success("매칭자료가 등록되었습니다.");
+      setCoverLetterId("");
+      setPortfolioId("");
+      setDesiredEmployerLink("");
+      setNote("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleCreate = () => {
+    create.mutate({
+      studentUserId,
+      resumeId: docs?.resume?.id,
+      coverLetterId: coverLetterId ? Number(coverLetterId) : undefined,
+      portfolioId: portfolioId ? Number(portfolioId) : undefined,
+      desiredEmployerLink: desiredEmployerLink || undefined,
+      note: note || undefined,
+    });
+  };
+
+  if (docsLoading) {
+    return <div className="flex justify-center py-8"><Loader2 size={18} className="animate-spin text-muted-foreground" /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="p-4 space-y-3">
+          <p className="text-sm font-semibold flex items-center gap-1.5"><Link2 size={14} /> 새 매칭자료 등록</p>
+
+          <div className="text-xs text-muted-foreground">
+            이력서: {docs?.resume ? <span className="text-foreground font-medium">현재 등록된 이력서 자동 연결</span> : "등록된 이력서 없음"}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">자기소개서</Label>
+              <Select value={coverLetterId} onValueChange={setCoverLetterId}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="선택 안 함" /></SelectTrigger>
+                <SelectContent>
+                  {(docs?.coverLetters ?? []).map((cl: any) => (
+                    <SelectItem key={cl.id} value={String(cl.id)}>{cl.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">랜딩페이지 (포트폴리오)</Label>
+              <Select value={portfolioId} onValueChange={setPortfolioId}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="선택 안 함" /></SelectTrigger>
+                <SelectContent>
+                  {(docs?.portfolios ?? []).map((pf: any) => (
+                    <SelectItem key={pf.id} value={String(pf.id)}>{pf.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">희망 취업처 링크</Label>
+            <Input
+              className="mt-1"
+              value={desiredEmployerLink}
+              onChange={(e) => setDesiredEmployerLink(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs">메모 (선택)</Label>
+            <Textarea className="mt-1" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="학생에게 전달할 메모" />
+          </div>
+
+          <Button
+            size="sm"
+            className="gap-1.5"
+            disabled={create.isPending || (!coverLetterId && !portfolioId && !desiredEmployerLink.trim() && !docs?.resume)}
+            onClick={handleCreate}
+          >
+            {create.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} 매칭자료 등록
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* 누적 히스토리 */}
+      <div className="space-y-3">
+        {recordsLoading ? (
+          <div className="flex justify-center py-8"><Loader2 size={18} className="animate-spin text-muted-foreground" /></div>
+        ) : records.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">등록된 매칭자료가 없습니다.</p>
+        ) : (
+          records.map((record: any) => <MatchingRecordCard key={record.id} record={record} />)
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MatchingRecordCard({ record }: { record: any }) {
+  const utils = trpc.useUtils();
+  const [reply, setReply] = useState("");
+  const addComment = trpc.careerMatching.addMatchingComment.useMutation({
+    onSuccess: () => {
+      utils.careerMatching.getMatchingRecords.invalidate({ studentUserId: record.studentUserId });
+      setReply("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <p className="text-xs text-muted-foreground">
+          {new Date(record.createdAt).toLocaleString("ko-KR")}
+        </p>
+
+        <div className="space-y-1 text-sm">
+          {record.resume && <p>📄 이력서: <span className="font-medium">{record.resume.name || "등록된 이력서"}</span></p>}
+          {record.coverLetter && <p>📝 자기소개서: <span className="font-medium">{record.coverLetter.title}</span></p>}
+          {record.portfolio && (
+            <p>
+              🌐 랜딩페이지:{" "}
+              {record.portfolio.externalUrl ? (
+                <a href={record.portfolio.externalUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  {record.portfolio.title}
+                </a>
+              ) : (
+                <span className="font-medium">{record.portfolio.title}</span>
+              )}
+            </p>
+          )}
+          {record.desiredEmployerLink && (
+            <p>
+              🎯 희망 취업처:{" "}
+              <a href={record.desiredEmployerLink} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                {record.desiredEmployerLink}
+              </a>
+            </p>
+          )}
+          {record.note && <p className="text-muted-foreground italic">💬 {record.note}</p>}
+        </div>
+
+        <div className="border-t pt-2 space-y-2">
+          {record.comments.length > 0 && (
+            <div className="space-y-2">
+              {record.comments.map((c: any) => (
+                <div key={c.id} className="flex items-start gap-2 text-xs">
+                  <Badge variant={c.authorRole === "admin" ? "default" : "secondary"} className="shrink-0">
+                    {c.authorRole === "admin" ? "학과장" : "학생"}
+                  </Badge>
+                  <div className="min-w-0 flex-1">
+                    <p>{c.content}</p>
+                    <p className="text-muted-foreground mt-0.5">{new Date(c.createdAt).toLocaleString("ko-KR")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              placeholder="답글 남기기"
+              className="text-sm"
+              onKeyDown={(e) => { if (e.key === "Enter" && reply.trim()) addComment.mutate({ recordId: record.id, content: reply }); }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={addComment.isPending || !reply.trim()}
+              onClick={() => addComment.mutate({ recordId: record.id, content: reply })}
+            >
+              <MessageSquare size={14} />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function CareerGuidance() {
@@ -188,7 +391,16 @@ export default function CareerGuidance() {
     setAiRecommendations([]);
   };
 
-  // guidance 데이터가 로드되면 폼에 반영
+  // guidance 데이터가 로드되면 폼에 자동 반영 (수동 클릭 없이도 기존 저장 내용을 덮어쓰지 않도록)
+  useEffect(() => {
+    if (!selectedStudent || !guidance) return;
+    setCareerTrack((guidance.careerTrack as CareerTrack) ?? "undecided");
+    setGuidanceNote(guidance.guidanceNote ?? "");
+    setChecklist((guidance.checklist as typeof DEFAULT_CHECKLIST) ?? DEFAULT_CHECKLIST);
+    setAiRecommendations((guidance.recommendedCompanies as typeof aiRecommendations) ?? []);
+  }, [selectedStudent?.id, guidance]);
+
+  // "저장된 데이터 불러오기" 버튼 (수동 재동기화용으로 유지)
   const handleLoadGuidance = () => {
     if (guidance) {
       setCareerTrack((guidance.careerTrack as CareerTrack) ?? "undecided");
@@ -254,6 +466,7 @@ export default function CareerGuidance() {
   };
 
   return (
+    <AppLayout title="진로지도 카드">
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">진로지도 카드</h1>
@@ -320,6 +533,9 @@ export default function CareerGuidance() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           희망: {row.surveyData.workType || "무관"} / {row.surveyData.industry || "무관"} | AI: {row.surveyData.aiUsage || "-"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          연봉: {row.surveyData.desiredSalary || "무관"} | 지역: {row.surveyData.desiredLocation || "무관"} | 취업 가능: {row.surveyData.availability || "미정"}
                         </p>
                         {row.surveyData.guidanceResult?.추천직무 && (
                           <div className="flex gap-1 flex-wrap mt-1">
@@ -390,7 +606,13 @@ export default function CareerGuidance() {
                     <CardTitle className="text-base flex items-center gap-2">
                       <User className="w-4 h-4" /> {selectedStudent.name} 진로지도 카드
                     </CardTitle>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <a href={WORKFLOW_URL} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm" className="gap-1">
+                          <ListChecks className="w-4 h-4" /> 워크플로우 가이드
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                      </a>
                       <Button variant="outline" size="sm" onClick={() => setDocsOpen(true)}>
                         <FileText className="w-4 h-4 mr-1" /> 서류 수정
                       </Button>
@@ -407,11 +629,12 @@ export default function CareerGuidance() {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="track">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                       <TabsTrigger value="track">진로 트랙</TabsTrigger>
                       <TabsTrigger value="checklist">체크리스트 ({completedCount}/{checklist.length})</TabsTrigger>
                       <TabsTrigger value="companies">취업처 추천</TabsTrigger>
                       <TabsTrigger value="docs">진로지도 자료</TabsTrigger>
+                      <TabsTrigger value="matching">매칭자료</TabsTrigger>
                     </TabsList>
 
                     {/* 진로 트랙 탭 */}
@@ -546,6 +769,11 @@ export default function CareerGuidance() {
                       })()}
                     </TabsContent>
 
+                    {/* 진로 매칭 자료 탭 */}
+                    <TabsContent value="matching" className="mt-4">
+                      <MatchingMaterialsTab studentUserId={selectedStudent.id} />
+                    </TabsContent>
+
                     {/* AI 취업처 추천 탭 */}
                     <TabsContent value="companies" className="mt-4 space-y-4">
                       <div className="flex justify-between items-center">
@@ -614,5 +842,6 @@ export default function CareerGuidance() {
         </TabsContent>
       </Tabs>
     </div>
+    </AppLayout>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "wouter";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -441,13 +442,34 @@ const TOOL_OPTIONS = ["Photoshop", "Illustrator", "InDesign", "Figma", "XD", "Pr
 const WORK_OPTIONS = ["상세페이지", "SNS 카드뉴스", "포스터/리플렛", "영상편집", "모션그래픽", "UI 화면설계", "브랜드 아이덴티티", "편집디자인", "유튜브 썸네일"];
 
 function SurveyTab() {
+  const { data: resume, isLoading: resumeLoading } = trpc.resume.getMyResume.useQuery();
+  const { data: profile } = trpc.user.getStudentProfile.useQuery();
+
   const [step, setStep] = useState(0);
   const [tools, setTools] = useState<string[]>([]);
   const [works, setWorks] = useState<string[]>([]);
   const [aiUsage, setAiUsage] = useState("");
   const [workType, setWorkType] = useState("");
   const [industry, setIndustry] = useState("");
+  const [desiredSalary, setDesiredSalary] = useState("");
+  const [desiredLocation, setDesiredLocation] = useState("");
+  const [availability, setAvailability] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
+
+  // 이력서 프로필의 보유 스킬을 설문 1단계(보유 툴)에 자동 반영
+  useEffect(() => {
+    if (!profile || prefilled) return;
+    const skills = (profile.skills as string[] | null) ?? [];
+    if (skills.length === 0) return;
+    const matched = TOOL_OPTIONS.filter((opt) =>
+      skills.some((s) => s.toLowerCase().includes(opt.toLowerCase()) || opt.toLowerCase().includes(s.toLowerCase()))
+    );
+    if (matched.length > 0) {
+      setTools(matched);
+      setPrefilled(true);
+    }
+  }, [profile, prefilled]);
 
   const mutation = trpc.aiAgent.submitSurvey.useMutation({
     onSuccess: () => setSubmitted(true),
@@ -458,19 +480,41 @@ function SurveyTab() {
     setList(list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
   };
 
+  if (resumeLoading) {
+    return <div className="text-sm text-muted-foreground py-8 text-center">불러오는 중…</div>;
+  }
+
+  if (!resume) {
+    return (
+      <div className="text-center py-12 text-muted-foreground max-w-md mx-auto">
+        <FileText size={32} className="mx-auto mb-3 opacity-30" />
+        <p className="text-sm">사전 설문은 이력서 등록 후 이용할 수 있습니다.</p>
+        <p className="text-xs mt-1 mb-4">서류 등록 센터에서 이력서를 먼저 등록해주세요.</p>
+        <Link href="/student/documents">
+          <Button size="sm" variant="outline">서류 등록 센터로 이동</Button>
+        </Link>
+      </div>
+    );
+  }
+
   const steps = [
     {
       title: "보유 툴을 선택해주세요",
       content: (
-        <div className="flex flex-wrap gap-2">
-          {TOOL_OPTIONS.map((t) => (
-            <Badge
-              key={t}
-              variant={tools.includes(t) ? "default" : "outline"}
-              className="cursor-pointer text-sm py-1 px-3"
-              onClick={() => toggleItem(tools, setTools, t)}
-            >{t}</Badge>
-          ))}
+        <div className="space-y-2">
+          {prefilled && (
+            <p className="text-xs text-primary">✓ 등록된 이력서의 보유 스킬을 자동으로 불러왔어요. 필요하면 수정하세요.</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {TOOL_OPTIONS.map((t) => (
+              <Badge
+                key={t}
+                variant={tools.includes(t) ? "default" : "outline"}
+                className="cursor-pointer text-sm py-1 px-3"
+                onClick={() => toggleItem(tools, setTools, t)}
+              >{t}</Badge>
+            ))}
+          </div>
         </div>
       ),
       canNext: tools.length > 0,
@@ -530,6 +574,48 @@ function SurveyTab() {
       ),
       canNext: true,
     },
+    {
+      title: "희망 연봉 수준은?",
+      content: (
+        <Select value={desiredSalary} onValueChange={setDesiredSalary}>
+          <SelectTrigger><SelectValue placeholder="선택해주세요" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="2,400만원 미만">2,400만원 미만</SelectItem>
+            <SelectItem value="2,400~2,800만원">2,400~2,800만원</SelectItem>
+            <SelectItem value="2,800~3,200만원">2,800~3,200만원</SelectItem>
+            <SelectItem value="3,200만원 이상">3,200만원 이상</SelectItem>
+            <SelectItem value="무관">무관 / 아직 모르겠어요</SelectItem>
+          </SelectContent>
+        </Select>
+      ),
+      canNext: true,
+    },
+    {
+      title: "희망 근무지역은?",
+      content: (
+        <Input
+          value={desiredLocation}
+          onChange={(e) => setDesiredLocation(e.target.value)}
+          placeholder="서울, 경기·인천, 무관 등"
+        />
+      ),
+      canNext: true,
+    },
+    {
+      title: "취업 가능 시기는?",
+      content: (
+        <Select value={availability} onValueChange={setAvailability}>
+          <SelectTrigger><SelectValue placeholder="선택해주세요" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="즉시 가능">즉시 가능</SelectItem>
+            <SelectItem value="1~3개월 이내">1~3개월 이내</SelectItem>
+            <SelectItem value="3~6개월 이내">3~6개월 이내</SelectItem>
+            <SelectItem value="아직 미정">아직 미정</SelectItem>
+          </SelectContent>
+        </Select>
+      ),
+      canNext: true,
+    },
   ];
 
   if (submitted) {
@@ -585,7 +671,7 @@ function SurveyTab() {
             </CardContent>
           </Card>
         )}
-        <Button variant="outline" onClick={() => { setSubmitted(false); setStep(0); setTools([]); setWorks([]); setAiUsage(""); setWorkType(""); setIndustry(""); }}>
+        <Button variant="outline" onClick={() => { setSubmitted(false); setStep(0); setTools([]); setWorks([]); setAiUsage(""); setWorkType(""); setIndustry(""); setDesiredSalary(""); setDesiredLocation(""); setAvailability(""); }}>
           다시 작성하기
         </Button>
       </div>
@@ -615,7 +701,13 @@ function SurveyTab() {
           </Button>
         ) : (
           <Button
-            onClick={() => mutation.mutate({ tools, works, aiUsage, workType, industry: industry || "무관" })}
+            onClick={() => mutation.mutate({
+              tools, works, aiUsage, workType,
+              industry: industry || "무관",
+              desiredSalary: desiredSalary || "무관",
+              desiredLocation: desiredLocation || "무관",
+              availability: availability || "미정",
+            })}
             disabled={mutation.isPending}
             className="gap-1.5"
           >

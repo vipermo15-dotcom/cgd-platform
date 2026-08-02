@@ -362,6 +362,9 @@ ${UNTRUSTED_DATA_NOTICE}`;
       aiUsage: z.string().max(200).optional(),
       workType: z.string().max(50).optional(),
       industry: z.string().max(100).optional(),
+      desiredSalary: z.string().max(50).optional(),
+      desiredLocation: z.string().max(100).optional(),
+      availability: z.string().max(50).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await enforceAiRateLimit(ctx.user.id, AI_LIMITS.analysis);
@@ -372,7 +375,10 @@ ${UNTRUSTED_DATA_NOTICE}`;
 주요 작업물: ${sanitizeList(input.works)}
 생성형 AI: ${sanitizeForPrompt(input.aiUsage || "미입력", 200)}
 희망 근무: ${sanitizeForPrompt(input.workType || "무관", 50)}
-희망 업종: ${sanitizeForPrompt(input.industry || "무관", 100)}`;
+희망 업종: ${sanitizeForPrompt(input.industry || "무관", 100)}
+희망 연봉: ${sanitizeForPrompt(input.desiredSalary || "무관", 50)}
+희망 근무지역: ${sanitizeForPrompt(input.desiredLocation || "무관", 100)}
+취업 가능 시기: ${sanitizeForPrompt(input.availability || "미입력", 50)}`;
 
       let tokensUsed = 0;
       let guidanceResult: object = {};
@@ -382,7 +388,46 @@ ${UNTRUSTED_DATA_NOTICE}`;
             { role: "system", content: CAREER_GUIDANCE_PROMPT },
             { role: "user", content: wrapUntrusted("STUDENT_INFO", userMessage) },
           ],
-          response_format: { type: "json_object" },
+          outputSchema: {
+            name: "career_guidance_result",
+            schema: {
+              type: "object",
+              properties: {
+                추천직무: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: { 직무명: { type: "string" }, 이유: { type: "string" } },
+                    required: ["직무명", "이유"],
+                  },
+                },
+                취업처목록: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      순위: { type: "number" },
+                      업종: { type: "string" },
+                      포지션: { type: "string" },
+                      추천이유: { type: "string" },
+                      준비포인트: { type: "string" },
+                    },
+                    required: ["순위", "업종", "포지션", "추천이유", "준비포인트"],
+                  },
+                },
+                준비로드맵: {
+                  type: "object",
+                  properties: {
+                    단기1개월: { type: "string" },
+                    중기3개월: { type: "string" },
+                    포트폴리오핵심: { type: "string" },
+                  },
+                  required: ["단기1개월", "중기3개월", "포트폴리오핵심"],
+                },
+              },
+              required: ["추천직무", "취업처목록", "준비로드맵"],
+            },
+          },
         });
         tokensUsed = response.usage?.total_tokens ?? 0;
         const raw = response.choices[0]?.message?.content;
@@ -402,6 +447,9 @@ ${UNTRUSTED_DATA_NOTICE}`;
           aiUsage: input.aiUsage ?? "",
           workType: input.workType ?? "",
           industry: input.industry ?? "",
+          desiredSalary: input.desiredSalary ?? "",
+          desiredLocation: input.desiredLocation ?? "",
+          availability: input.availability ?? "",
           submittedAt: new Date().toISOString(),
           guidanceResult,
         };

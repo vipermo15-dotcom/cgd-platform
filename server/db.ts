@@ -43,7 +43,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   const values: InsertUser = { openId: user.openId };
   const updateSet: Record<string, unknown> = {};
 
-  const textFields = ["name", "email", "loginMethod"] as const;
+  // name은 최초 INSERT(신규 가입)에만 사용 — 이후 로그인 시 Google 이름으로 덮어쓰지 않음
+  if (user.name !== undefined) {
+    values.name = user.name ?? null;
+  }
+
+  const textFields = ["email", "loginMethod"] as const;
   for (const field of textFields) {
     const value = user[field];
     if (value === undefined) continue;

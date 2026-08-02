@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, adminProcedure, router } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { getDb, updateCoverLetter, updatePortfolio } from "../db";
+import { getDb, updateCoverLetter, updatePortfolio, createCoverLetter, createPortfolio } from "../db";
 import { resumes, coverLetters, portfolios, notifications } from "../../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { sanitizeForPrompt, sanitizeList, UNTRUSTED_DATA_NOTICE } from "../_core/promptSafety";
@@ -627,10 +627,29 @@ export const resumeRouter = router({
 
   // ─── 관리자: 교육생 자기소개서 수정 ──────────────────────────────────────────
   adminUpdateStudentCoverLetter: adminProcedure
-    .input(z.object({ id: z.number(), title: z.string().optional(), content: z.string().min(1, "내용을 입력하세요.") }))
+    .input(z.object({ id: z.number(), title: z.string().optional(), content: z.string().min(1, "내용을 입력하세요."), pdfUrl: z.string().optional() }))
     .mutation(async ({ input }) => {
-      await updateCoverLetter(input.id, { title: input.title, content: input.content });
+      await updateCoverLetter(input.id, { title: input.title, content: input.content, pdfUrl: input.pdfUrl });
       return { success: true };
+    }),
+
+  // ─── 관리자: 교육생 자기소개서 신규 등록 ────────────────────────────────────
+  adminCreateStudentCoverLetter: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      title: z.string().min(1),
+      content: z.string().min(1, "내용을 입력하세요."),
+      pdfUrl: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await createCoverLetter({
+        userId: input.userId,
+        title: input.title,
+        content: input.content,
+        pdfUrl: input.pdfUrl,
+        isAiGenerated: false,
+      });
+      return { id: (result as any).insertId };
     }),
 
   // ─── 관리자: 교육생 포트폴리오 수정 ──────────────────────────────────────────
@@ -639,11 +658,36 @@ export const resumeRouter = router({
       id: z.number(),
       title: z.string().optional(),
       description: z.string().optional(),
+      portfolioType: z.enum(["pdf", "url"]).optional(),
+      pdfUrl: z.string().optional(),
       externalUrl: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...fields } = input;
       await updatePortfolio(id, fields);
       return { success: true };
+    }),
+
+  // ─── 관리자: 교육생 포트폴리오 신규 등록 ────────────────────────────────────
+  adminCreateStudentPortfolio: adminProcedure
+    .input(z.object({
+      userId: z.number(),
+      title: z.string().min(1),
+      description: z.string().optional(),
+      portfolioType: z.enum(["pdf", "url"]),
+      pdfUrl: z.string().optional(),
+      externalUrl: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await createPortfolio({
+        userId: input.userId,
+        title: input.title,
+        description: input.description,
+        portfolioType: input.portfolioType,
+        pdfUrl: input.pdfUrl,
+        externalUrl: input.externalUrl,
+        isPublic: false,
+      });
+      return { id: (result as any).insertId };
     }),
 });

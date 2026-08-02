@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
@@ -18,8 +20,24 @@ import {
   Target,
   Award,
   Clock,
-  ChevronRight,
+  ListChecks,
+  FolderOpen,
+  Link2,
+  MessageSquare,
 } from "lucide-react";
+
+const WORKFLOW_URL =
+  "https://vipermo15-dotcom.github.io/cgd-ai-career-platform/docs/portfolio-workflow.html";
+
+const WORKFLOW_STEPS = [
+  { num: 1, phase: "진로 설정", title: "취업 방향 결정 & 사전 설문", duration: "Week 1~2", color: "#e60023", tasks: ["CGD 플랫폼 사전 설문 작성", "취업 분야 1순위 결정", "희망 기업 리스트 3개 이상 조사", "진로지도 MD 파일 수령"] },
+  { num: 2, phase: "서류 준비", title: "이력서 · 자소서 · 포트폴리오 초안", duration: "Week 2~4", color: "#0070d1", tasks: ["이력서 초안 작성", "자기소개서 초안 1개 이상", "포트폴리오 작업물 5개 이상 선정", "AI 역량 분석 1회 이상 실행"] },
+  { num: 3, phase: "플랫폼 등록", title: "CGD 플랫폼 서류 업로드 완성", duration: "Week 3~5", color: "#7e238b", tasks: ["프로필 4항목 입력 완료", "포트폴리오 1개 이상 등록", "자기소개서 1개 이상 등록", "취업 준비율 40점 이상 달성"] },
+  { num: 4, phase: "개인 브랜딩", title: "포트폴리오 랜딩페이지 제작", duration: "Week 4~6", color: "#d97706", tasks: ["디자인 시스템 선택", "콘텐츠 구성 완료", "GitHub Pages 업로드 및 링크 확인", "선생님 피드백 반영 완료"] },
+  { num: 5, phase: "취업처 매칭", title: "AI 취업처 추천 & 채용공고 분석", duration: "Week 5~8", color: "#059669", tasks: ["AI 취업처 추천 1회 이상 실행", "목표 기업 3개 이상 선정", "채용공고 첨삭 1개 이상 완료"] },
+  { num: 6, phase: "취업 활동", title: "지원서 제출 & 면접 준비", duration: "Week 7~12", color: "#dc2626", tasks: ["1개 이상 기업 지원 완료", "지원 현황 플랫폼 기록", "AI 면접 준비 1회 이상"] },
+  { num: 7, phase: "사후 관리", title: "취업 확정 보고 & 사후 지도", duration: "취업 후", color: "#374151", tasks: ["플랫폼 취업 상태 '취업확정' 업데이트", "취업 기업명·직종 입력", "플랫폼 피드백 작성"] },
+];
 import { useAuth } from "@/_core/hooks/useAuth";
 
 const CAREER_TRACK_LABELS: Record<string, string> = {
@@ -86,11 +104,96 @@ interface ChecklistItem {
   category: string;
 }
 
+function StudentMatchingRecordCard({ record, studentUserId }: { record: any; studentUserId: number }) {
+  const utils = trpc.useUtils();
+  const [reply, setReply] = useState("");
+  const addComment = trpc.careerMatching.addMatchingComment.useMutation({
+    onSuccess: () => {
+      utils.careerMatching.getMatchingRecords.invalidate({ studentUserId });
+      setReply("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardContent className="p-4 space-y-3">
+        <p className="text-xs text-muted-foreground">{new Date(record.createdAt).toLocaleString("ko-KR")}</p>
+        <div className="space-y-1 text-sm">
+          {record.resume && <p>📄 이력서: <span className="font-medium">{record.resume.name || "등록된 이력서"}</span></p>}
+          {record.coverLetter && <p>📝 자기소개서: <span className="font-medium">{record.coverLetter.title}</span></p>}
+          {record.portfolio && (
+            <p>
+              🌐 랜딩페이지:{" "}
+              {record.portfolio.externalUrl ? (
+                <a href={record.portfolio.externalUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                  {record.portfolio.title}
+                </a>
+              ) : (
+                <span className="font-medium">{record.portfolio.title}</span>
+              )}
+            </p>
+          )}
+          {record.desiredEmployerLink && (
+            <p>
+              🎯 희망 취업처:{" "}
+              <a href={record.desiredEmployerLink} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                {record.desiredEmployerLink}
+              </a>
+            </p>
+          )}
+          {record.note && <p className="text-muted-foreground italic">💬 학과장 메모: {record.note}</p>}
+        </div>
+
+        <div className="border-t pt-2 space-y-2">
+          {record.comments.length > 0 && (
+            <div className="space-y-2">
+              {record.comments.map((c: any) => (
+                <div key={c.id} className="flex items-start gap-2 text-xs">
+                  <Badge variant={c.authorRole === "admin" ? "default" : "secondary"} className="shrink-0">
+                    {c.authorRole === "admin" ? "학과장" : "나"}
+                  </Badge>
+                  <div className="min-w-0 flex-1">
+                    <p>{c.content}</p>
+                    <p className="text-muted-foreground mt-0.5">{new Date(c.createdAt).toLocaleString("ko-KR")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              placeholder="답글 남기기"
+              className="text-sm"
+              onKeyDown={(e) => { if (e.key === "Enter" && reply.trim()) addComment.mutate({ recordId: record.id, content: reply }); }}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={addComment.isPending || !reply.trim()}
+              onClick={() => addComment.mutate({ recordId: record.id, content: reply })}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function CareerProgress() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("checklist");
 
   const { data: guidance } = trpc.guidance.getCareerGuidance.useQuery(
+    { studentUserId: user?.id ?? 0 },
+    { enabled: !!user?.id }
+  );
+
+  const { data: matchingRecords = [], isLoading: matchingLoading } = trpc.careerMatching.getMatchingRecords.useQuery(
     { studentUserId: user?.id ?? 0 },
     { enabled: !!user?.id }
   );
@@ -106,7 +209,6 @@ export default function CareerProgress() {
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const careerTrack = guidance?.careerTrack ?? "undecided";
-  const isFreelancer = careerTrack === "freelancer";
 
   const handleToggle = (itemId: string) => {
     if (!guidance?.id) return;
@@ -138,9 +240,17 @@ export default function CareerProgress() {
                   </p>
                 )}
               </div>
-              <div className="text-right flex-shrink-0">
-                <p className="text-3xl font-bold text-primary">{progressPct}%</p>
-                <p className="text-xs text-muted-foreground">{completedCount}/{totalCount} 완료</p>
+              <div className="text-right flex-shrink-0 space-y-2">
+                <div>
+                  <p className="text-3xl font-bold text-primary">{progressPct}%</p>
+                  <p className="text-xs text-muted-foreground">{completedCount}/{totalCount} 완료</p>
+                </div>
+                <Link href="/student/documents">
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    서류 등록하러 가기
+                  </Button>
+                </Link>
               </div>
             </div>
             <div className="mt-4">
@@ -150,10 +260,14 @@ export default function CareerProgress() {
         </Card>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="checklist">
               <CheckCircle2 className="w-4 h-4 mr-1.5" />
               취업 체크리스트
+            </TabsTrigger>
+            <TabsTrigger value="workflow">
+              <ListChecks className="w-4 h-4 mr-1.5" />
+              포트폴리오 워크플로우
             </TabsTrigger>
             <TabsTrigger value="recommendations">
               <Sparkles className="w-4 h-4 mr-1.5" />
@@ -162,6 +276,10 @@ export default function CareerProgress() {
             <TabsTrigger value="freelancer">
               <TrendingUp className="w-4 h-4 mr-1.5" />
               프리랜서 가이드
+            </TabsTrigger>
+            <TabsTrigger value="matching">
+              <Link2 className="w-4 h-4 mr-1.5" />
+              학과장 매칭자료
             </TabsTrigger>
           </TabsList>
 
@@ -219,6 +337,79 @@ export default function CareerProgress() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* 포트폴리오 워크플로우 탭 */}
+          <TabsContent value="workflow" className="mt-4 space-y-4">
+            {/* 전체 가이드 링크 배너 */}
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="p-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-sm">포트폴리오 제작 단계별 가이드</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    진로 설정부터 취업 확정까지 7단계 워크플로우 — 체크리스트 포함
+                  </p>
+                </div>
+                <a href={WORKFLOW_URL} target="_blank" rel="noopener noreferrer">
+                  <Button size="sm" className="gap-1.5 flex-shrink-0">
+                    전체 가이드 열기
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Button>
+                </a>
+              </CardContent>
+            </Card>
+
+            {/* 7단계 인라인 뷰 */}
+            <div className="space-y-3">
+              {WORKFLOW_STEPS.map((step, idx) => (
+                <Card key={step.num} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="flex items-stretch">
+                      {/* 번호 컬럼 */}
+                      <div
+                        className="flex items-center justify-center w-12 flex-shrink-0 text-white font-bold text-base"
+                        style={{ backgroundColor: step.color }}
+                      >
+                        {step.num}
+                      </div>
+                      {/* 내용 */}
+                      <div className="flex-1 px-4 py-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div>
+                            <span
+                              className="text-xs font-bold uppercase tracking-wide"
+                              style={{ color: step.color }}
+                            >
+                              {step.phase}
+                            </span>
+                            <p className="font-semibold text-sm text-foreground mt-0.5">{step.title}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            {step.duration}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {step.tasks.map((task) => (
+                            <span
+                              key={task}
+                              className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full"
+                            >
+                              {task}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {/* 스텝 연결선 */}
+                    {idx < WORKFLOW_STEPS.length - 1 && (
+                      <div className="flex justify-start pl-6">
+                        <div className="w-0.5 h-2 bg-border" />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </TabsContent>
 
           {/* AI 추천 취업처 탭 */}
@@ -371,6 +562,22 @@ export default function CareerProgress() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* 학과장 매칭자료 탭 */}
+          <TabsContent value="matching" className="mt-4 space-y-3">
+            {matchingLoading ? (
+              <div className="flex justify-center py-8 text-muted-foreground">불러오는 중…</div>
+            ) : matchingRecords.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">
+                <Link2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p>아직 학과장이 등록한 매칭자료가 없습니다.</p>
+              </div>
+            ) : (
+              matchingRecords.map((record: any) => (
+                <StudentMatchingRecordCard key={record.id} record={record} studentUserId={user?.id ?? 0} />
+              ))
+            )}
           </TabsContent>
         </Tabs>
       </div>

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Save, FileText, FolderOpen, FileSignature, UserCog, X, Plus } from "lucide-react";
+import { Loader2, Save, FileText, FolderOpen, FileSignature, UserCog, X, Plus, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -48,22 +48,113 @@ function ResumeEditor({ userId, resume }: { userId: number; resume: any }) {
   );
 }
 
+// ─── 공통: 파일 업로드 (PDF 등) ────────────────────────────────────────────────
+async function uploadFile(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch("/api/upload", { method: "POST", body: formData });
+  if (!res.ok) throw new Error("파일 업로드에 실패했습니다.");
+  const data = await res.json();
+  return data.url as string;
+}
+
 // ─── 자기소개서 1건 편집 ──────────────────────────────────────────────────────
 function CoverLetterItem({ cl }: { cl: any }) {
   const utils = trpc.useUtils();
   const [title, setTitle] = useState(cl.title ?? "");
   const [content, setContent] = useState(cl.content ?? "");
+  const [pdfUrl, setPdfUrl] = useState(cl.pdfUrl ?? "");
+  const [uploading, setUploading] = useState(false);
   const save = trpc.resume.adminUpdateStudentCoverLetter.useMutation({
     onSuccess: () => { utils.resume.adminGetStudentDocuments.invalidate(); toast.success("자기소개서가 수정되었습니다."); },
     onError: (e) => toast.error(e.message),
   });
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      setPdfUrl(await uploadFile(file));
+    } catch (e: any) {
+      toast.error(e.message ?? "업로드 실패");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="rounded-lg border p-3 space-y-2">
       <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" className="font-medium" />
       <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} />
-      <Button size="sm" variant="outline" className="gap-1.5" disabled={save.isPending} onClick={() => save.mutate({ id: cl.id, title, content })}>
+      <label className="flex items-center gap-2 rounded-md border border-dashed p-2 cursor-pointer text-sm">
+        <Upload size={14} className="text-muted-foreground shrink-0" />
+        <span className="text-muted-foreground">
+          {uploading ? "업로드 중..." : pdfUrl ? "첨부 파일 교체 (PDF·DOC·DOCX)" : "PDF · DOC · DOCX 첨부 (선택, 최대 50MB)"}
+        </span>
+        <input type="file" accept=".pdf,.doc,.docx" className="hidden" disabled={uploading}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); }} />
+      </label>
+      {pdfUrl && (
+        <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline block">
+          첨부된 파일 보기
+        </a>
+      )}
+      <Button size="sm" variant="outline" className="gap-1.5" disabled={save.isPending} onClick={() => save.mutate({ id: cl.id, title, content, pdfUrl })}>
         {save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 저장
       </Button>
+    </div>
+  );
+}
+
+// ─── 자기소개서 신규 등록 ──────────────────────────────────────────────────────
+function NewCoverLetterForm({ userId, onDone }: { userId: number; onDone: () => void }) {
+  const utils = trpc.useUtils();
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const create = trpc.resume.adminCreateStudentCoverLetter.useMutation({
+    onSuccess: () => {
+      utils.resume.adminGetStudentDocuments.invalidate();
+      toast.success("자기소개서가 등록되었습니다.");
+      onDone();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      setPdfUrl(await uploadFile(file));
+    } catch (e: any) {
+      toast.error(e.message ?? "업로드 실패");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+      <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" className="font-medium" />
+      <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={6} placeholder="내용을 입력하세요" />
+      <label className="flex items-center gap-2 rounded-md border border-dashed p-2 cursor-pointer text-sm">
+        <Upload size={14} className="text-muted-foreground shrink-0" />
+        <span className="text-muted-foreground">
+          {uploading ? "업로드 중..." : pdfUrl ? "첨부됨 — 교체하려면 클릭" : "PDF · DOC · DOCX 첨부 (선택, 최대 50MB)"}
+        </span>
+        <input type="file" accept=".pdf,.doc,.docx" className="hidden" disabled={uploading}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); }} />
+      </label>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          className="gap-1.5"
+          disabled={create.isPending || !title.trim() || !content.trim()}
+          onClick={() => create.mutate({ userId, title, content, pdfUrl: pdfUrl || undefined })}
+        >
+          {create.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 등록
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onDone}>취소</Button>
+      </div>
     </div>
   );
 }
@@ -74,18 +165,112 @@ function PortfolioItem({ pf }: { pf: any }) {
   const [title, setTitle] = useState(pf.title ?? "");
   const [description, setDescription] = useState(pf.description ?? "");
   const [externalUrl, setExternalUrl] = useState(pf.externalUrl ?? "");
+  const [pdfUrl, setPdfUrl] = useState(pf.pdfUrl ?? "");
+  const [uploading, setUploading] = useState(false);
   const save = trpc.resume.adminUpdateStudentPortfolio.useMutation({
     onSuccess: () => { utils.resume.adminGetStudentDocuments.invalidate(); toast.success("포트폴리오가 수정되었습니다."); },
     onError: (e) => toast.error(e.message),
   });
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      setPdfUrl(await uploadFile(file));
+    } catch (e: any) {
+      toast.error(e.message ?? "업로드 실패");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="rounded-lg border p-3 space-y-2">
       <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" className="font-medium" />
       <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="설명" />
       <Input value={externalUrl} onChange={(e) => setExternalUrl(e.target.value)} placeholder="외부 URL (선택)" />
-      <Button size="sm" variant="outline" className="gap-1.5" disabled={save.isPending} onClick={() => save.mutate({ id: pf.id, title, description, externalUrl })}>
+      <label className="flex items-center gap-2 rounded-md border border-dashed p-2 cursor-pointer text-sm">
+        <Upload size={14} className="text-muted-foreground shrink-0" />
+        <span className="text-muted-foreground">
+          {uploading ? "업로드 중..." : pdfUrl ? "첨부 파일 교체 (PDF)" : "PDF 첨부 (선택, 최대 50MB)"}
+        </span>
+        <input type="file" accept=".pdf" className="hidden" disabled={uploading}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); }} />
+      </label>
+      {pdfUrl && (
+        <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline block">
+          첨부된 파일 보기
+        </a>
+      )}
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1.5"
+        disabled={save.isPending}
+        onClick={() => save.mutate({ id: pf.id, title, description, externalUrl, pdfUrl, portfolioType: pdfUrl ? "pdf" : "url" })}
+      >
         {save.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 저장
       </Button>
+    </div>
+  );
+}
+
+// ─── 포트폴리오 신규 등록 ──────────────────────────────────────────────────────
+function NewPortfolioForm({ userId, onDone }: { userId: number; onDone: () => void }) {
+  const utils = trpc.useUtils();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [externalUrl, setExternalUrl] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const create = trpc.resume.adminCreateStudentPortfolio.useMutation({
+    onSuccess: () => {
+      utils.resume.adminGetStudentDocuments.invalidate();
+      toast.success("포트폴리오가 등록되었습니다.");
+      onDone();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      setPdfUrl(await uploadFile(file));
+    } catch (e: any) {
+      toast.error(e.message ?? "업로드 실패");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+      <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="제목" className="font-medium" />
+      <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="설명" />
+      <Input value={externalUrl} onChange={(e) => setExternalUrl(e.target.value)} placeholder="외부 URL (선택 — 랜딩페이지 링크 등)" />
+      <label className="flex items-center gap-2 rounded-md border border-dashed p-2 cursor-pointer text-sm">
+        <Upload size={14} className="text-muted-foreground shrink-0" />
+        <span className="text-muted-foreground">
+          {uploading ? "업로드 중..." : pdfUrl ? "첨부됨 — 교체하려면 클릭" : "PDF 첨부 (선택, 최대 50MB)"}
+        </span>
+        <input type="file" accept=".pdf" className="hidden" disabled={uploading}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); }} />
+      </label>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          className="gap-1.5"
+          disabled={create.isPending || !title.trim() || (!externalUrl.trim() && !pdfUrl)}
+          onClick={() => create.mutate({
+            userId, title, description: description || undefined,
+            portfolioType: pdfUrl ? "pdf" : "url",
+            pdfUrl: pdfUrl || undefined,
+            externalUrl: externalUrl || undefined,
+          })}
+        >
+          {create.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 등록
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onDone}>취소</Button>
+      </div>
     </div>
   );
 }
@@ -287,6 +472,8 @@ export default function StudentDocumentsDialog({
     { studentUserId: userId ?? 0 },
     { enabled: open && userId !== null },
   );
+  const [addingCoverLetter, setAddingCoverLetter] = useState(false);
+  const [addingPortfolio, setAddingPortfolio] = useState(false);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -317,18 +504,30 @@ export default function StudentDocumentsDialog({
             </TabsContent>
 
             <TabsContent value="cover" className="mt-4 space-y-3">
-              {(data?.coverLetters?.length ?? 0) === 0 ? (
+              {(data?.coverLetters?.length ?? 0) === 0 && !addingCoverLetter && (
                 <p className="text-sm text-muted-foreground text-center py-6">등록된 자기소개서가 없습니다.</p>
+              )}
+              {data?.coverLetters?.map((cl: any) => <CoverLetterItem key={cl.id} cl={cl} />)}
+              {addingCoverLetter && userId !== null ? (
+                <NewCoverLetterForm userId={userId} onDone={() => setAddingCoverLetter(false)} />
               ) : (
-                data!.coverLetters.map((cl: any) => <CoverLetterItem key={cl.id} cl={cl} />)
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddingCoverLetter(true)}>
+                  <Plus size={14} /> 새 자기소개서 추가
+                </Button>
               )}
             </TabsContent>
 
             <TabsContent value="portfolio" className="mt-4 space-y-3">
-              {(data?.portfolios?.length ?? 0) === 0 ? (
+              {(data?.portfolios?.length ?? 0) === 0 && !addingPortfolio && (
                 <p className="text-sm text-muted-foreground text-center py-6">등록된 포트폴리오가 없습니다.</p>
+              )}
+              {data?.portfolios?.map((pf: any) => <PortfolioItem key={pf.id} pf={pf} />)}
+              {addingPortfolio && userId !== null ? (
+                <NewPortfolioForm userId={userId} onDone={() => setAddingPortfolio(false)} />
               ) : (
-                data!.portfolios.map((pf: any) => <PortfolioItem key={pf.id} pf={pf} />)
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setAddingPortfolio(true)}>
+                  <Plus size={14} /> 새 포트폴리오 추가
+                </Button>
               )}
             </TabsContent>
           </Tabs>

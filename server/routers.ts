@@ -15,6 +15,7 @@ import { coachingRouter } from "./routers/coaching";
 import { aiMatchRouter } from "./routers/aimatch";
 import { aiAgentRouter } from "./routers/ai-agent";
 import { feedbackRouter } from "./routers/feedback";
+import { careerMatchingRouter } from "./routers/careerMatching";
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -36,6 +37,7 @@ export const appRouter = router({
   manual: manualRouter,
   resume: resumeRouter,
   guidance: guidanceRouter,
+  careerMatching: careerMatchingRouter,
   coaching: coachingRouter,
   aiAgent: aiAgentRouter,
   aiMatch: aiMatchRouter,

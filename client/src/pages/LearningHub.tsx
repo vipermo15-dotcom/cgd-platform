@@ -343,7 +343,9 @@ export default function LearningHub() {
                     <div className="text-lg mb-1">{s.label.split(" ")[0]}</div>
                     <div className="text-xs font-semibold text-gray-700">{s.label.slice(2)}</div>
                     <div className="text-xs text-gray-400 mt-1">
-                      {s.weeks ? "20주차" : `${(s.files as FileItem[]).length}개 문서`}
+                      {(s as any).weeks ? "20주차"
+                        : (s as any).students ? `${(s as any).students.length}명`
+                        : `${((s as any).files as FileItem[]).length}개 문서`}
                     </div>
                   </div>
                 ))}

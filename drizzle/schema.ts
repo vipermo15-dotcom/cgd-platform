@@ -442,6 +442,9 @@ export const careerGuidance = mysqlTable("career_guidance", {
     aiUsage: string;
     workType: string;
     industry: string;
+    desiredSalary?: string;
+    desiredLocation?: string;
+    availability?: string;
     submittedAt: string;
     guidanceResult?: {
       추천직무?: Array<{ 직무명: string; 이유: string }>;
@@ -457,6 +460,40 @@ export const careerGuidance = mysqlTable("career_guidance", {
 
 export type CareerGuidance = typeof careerGuidance.$inferSelect;
 export type InsertCareerGuidance = typeof careerGuidance.$inferInsert;
+
+// ─── 진로 매칭 자료 (학과장이 이력서·자소서·랜딩페이지·희망 취업처를 묶어 등록) ──
+export const careerMatchingRecords = mysqlTable("career_matching_records", {
+  id: int("id").autoincrement().primaryKey(),
+  studentUserId: int("studentUserId").notNull(),
+  professorUserId: int("professorUserId"),
+  resumeId: int("resumeId"),
+  coverLetterId: int("coverLetterId"),
+  // 랜딩페이지로 쓸 포트폴리오 (portfolios.externalUrl 참조)
+  portfolioId: int("portfolioId"),
+  desiredEmployerLink: text("desiredEmployerLink"),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  studentIdx: index("career_matching_records_studentUserId_idx").on(t.studentUserId),
+}));
+
+export type CareerMatchingRecord = typeof careerMatchingRecords.$inferSelect;
+export type InsertCareerMatchingRecord = typeof careerMatchingRecords.$inferInsert;
+
+// ─── 진로 매칭 자료에 대한 학생 ↔ 학과장 댓글 ────────────────────────────────
+export const careerMatchingComments = mysqlTable("career_matching_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  recordId: int("recordId").notNull(),
+  authorUserId: int("authorUserId").notNull(),
+  authorRole: mysqlEnum("authorRole", ["student", "admin"]).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  recordIdx: index("career_matching_comments_recordId_idx").on(t.recordId),
+}));
+
+export type CareerMatchingComment = typeof careerMatchingComments.$inferSelect;
+export type InsertCareerMatchingComment = typeof careerMatchingComments.$inferInsert;
 
 // ─── 업체 파이프라인 (공동훈련센터/관리자 관리) ────────────────────────────────
 export const companyPipeline = mysqlTable("company_pipeline", {
