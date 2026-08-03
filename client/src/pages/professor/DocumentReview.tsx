@@ -411,7 +411,7 @@ export default function ProfessorDocumentReview() {
 
   return (
     <AppLayout title="서류 검토">
-      <div className="p-6 space-y-6 max-w-4xl">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {/* 헤더 */}
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">

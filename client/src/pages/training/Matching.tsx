@@ -24,7 +24,7 @@ export default function TrainingMatching() {
 
   return (
     <AppLayout title="AI 기업-학생 매칭">
-      <div className="p-6 space-y-6">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">

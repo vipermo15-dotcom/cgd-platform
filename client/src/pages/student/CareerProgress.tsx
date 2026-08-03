@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AppLayout from "@/components/AppLayout";
+import ProgressGrid, { TOTAL_WEEKS, getStageOfWeek, weekState } from "@/components/ProgressGrid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -38,6 +39,14 @@ const WORKFLOW_STEPS = [
   { num: 6, phase: "취업 활동", title: "지원서 제출 & 면접 준비", duration: "Week 7~12", color: "#dc2626", tasks: ["1개 이상 기업 지원 완료", "지원 현황 플랫폼 기록", "AI 면접 준비 1회 이상"] },
   { num: 7, phase: "사후 관리", title: "취업 확정 보고 & 사후 지도", duration: "취업 후", color: "#374151", tasks: ["플랫폼 취업 상태 '취업확정' 업데이트", "취업 기업명·직종 입력", "플랫폼 피드백 작성"] },
 ];
+
+// 40주 진도 그리드의 4단계와 기존 7단계 워크플로우를 연결 (실제 주차 데이터가 없어 체크리스트 완료율로 근사)
+const STAGE_WORKFLOW_STEPS: Record<string, number[]> = {
+  basic: [1, 2],
+  practice: [3],
+  portfolio: [4],
+  job: [5, 6, 7],
+};
 import { useAuth } from "@/_core/hooks/useAuth";
 
 const CAREER_TRACK_LABELS: Record<string, string> = {
@@ -187,6 +196,7 @@ function StudentMatchingRecordCard({ record, studentUserId }: { record: any; stu
 export default function CareerProgress() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("checklist");
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   const { data: guidance } = trpc.guidance.getCareerGuidance.useQuery(
     { studentUserId: user?.id ?? 0 },
@@ -209,6 +219,8 @@ export default function CareerProgress() {
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const careerTrack = guidance?.careerTrack ?? "undecided";
+  const doneCount = Math.round((progressPct / 100) * TOTAL_WEEKS);
+  const currentStage = getStageOfWeek(Math.min(doneCount + 1, TOTAL_WEEKS));
 
   const handleToggle = (itemId: string) => {
     if (!guidance?.id) return;
@@ -217,33 +229,36 @@ export default function CareerProgress() {
 
   const CATEGORY_ORDER = ["서류", "검토", "매칭", "지원", "면접", "결과"];
 
+  const selectedStage = selectedWeek ? getStageOfWeek(selectedWeek) : null;
+  const selectedState = selectedWeek ? weekState(selectedWeek, doneCount) : null;
+  const selectedSteps = selectedStage
+    ? WORKFLOW_STEPS.filter((s) => STAGE_WORKFLOW_STEPS[selectedStage.key]?.includes(s.num))
+    : [];
+
   return (
-    <AppLayout title="진로 진행 현황">
-      <div className="p-6 space-y-6 max-w-4xl mx-auto">
+    <AppLayout title="내 진도">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {/* 헤더 카드 */}
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between gap-4">
+        <Card>
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <h2 className="text-lg font-bold text-foreground">
                   {user?.name ?? "학생"}님의 취업 준비 현황
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  진로 트랙:{" "}
-                  <Badge variant="outline" className="ml-1">
-                    {CAREER_TRACK_LABELS[careerTrack] ?? "미정"}
-                  </Badge>
+                  진로 트랙 · <Badge variant="outline" className="ml-1">{CAREER_TRACK_LABELS[careerTrack] ?? "미정"}</Badge>
                 </p>
                 {guidance?.guidanceNote && (
-                  <p className="text-sm text-muted-foreground mt-2 italic">
-                    💬 학과장 메모: {guidance.guidanceNote}
+                  <p className="text-sm text-muted-foreground mt-2">
+                    학과장 코멘트 · {guidance.guidanceNote}
                   </p>
                 )}
               </div>
               <div className="text-right flex-shrink-0 space-y-2">
                 <div>
-                  <p className="text-3xl font-bold text-primary">{progressPct}%</p>
-                  <p className="text-xs text-muted-foreground">{completedCount}/{totalCount} 완료</p>
+                  <p className="text-3xl font-bold text-foreground tabular-nums">{progressPct}%</p>
+                  <p className="text-xs text-muted-foreground">{currentStage.label} · {completedCount}/{totalCount} 항목 완료</p>
                 </div>
                 <Link href="/student/documents">
                   <Button variant="outline" size="sm" className="gap-1.5">
@@ -253,11 +268,62 @@ export default function CareerProgress() {
                 </Link>
               </div>
             </div>
-            <div className="mt-4">
-              <Progress value={progressPct} className="h-2" />
-            </div>
+            <ProgressGrid doneCount={doneCount} onCellClick={setSelectedWeek} />
+            <p className="text-xs text-muted-foreground">
+              칸을 눌러 해당 구간의 준비 항목을 확인하세요 · 실제 주차별 과제·출석 데이터가 아직 연동되지 않아 체크리스트 완료율로 근사 표시돼요.
+            </p>
           </CardContent>
         </Card>
+
+        <Sheet open={selectedWeek !== null} onOpenChange={(open) => !open && setSelectedWeek(null)}>
+          <SheetContent side="right" className="w-full sm:max-w-[420px] p-0">
+            {selectedWeek && selectedStage && (
+              <div className="flex flex-col h-full">
+                <SheetHeader className="px-5 py-4 border-b border-border">
+                  <SheetTitle className="text-base">{selectedWeek}주차 · {selectedStage.label}</SheetTitle>
+                  <Badge
+                    variant="outline"
+                    className={
+                      selectedState === "done" ? "w-fit bg-foreground text-background border-transparent" :
+                      selectedState === "current" ? "w-fit bg-primary text-primary-foreground border-transparent" :
+                      "w-fit"
+                    }
+                  >
+                    {selectedState === "done" ? "완료" : selectedState === "current" ? "이번 주" : "예정"}
+                  </Badge>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  {selectedSteps.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">이 구간에 연결된 준비 항목이 없어요.</p>
+                  ) : (
+                    selectedSteps.map((step) => (
+                      <div key={step.num} className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-foreground">{step.title}</p>
+                          <Badge variant="outline" className="text-xs shrink-0">{step.duration}</Badge>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {step.tasks.map((task) => (
+                            <span key={task} className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
+                              {task}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <Separator />
+                  <a href={WORKFLOW_URL} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm" className="gap-1.5 w-full">
+                      전체 가이드 열기
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            )}
+          </SheetContent>
+        </Sheet>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-5">

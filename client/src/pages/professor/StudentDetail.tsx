@@ -22,7 +22,7 @@ export default function ProfessorStudentDetail() {
 
   return (
     <AppLayout title="학생 상세">
-      <div className="p-6 space-y-6 max-w-4xl">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         <Link href="/professor/students">
           <Button variant="ghost" size="sm" className="gap-2"><ArrowLeft size={16} /> 목록으로</Button>
         </Link>

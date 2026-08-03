@@ -23,7 +23,7 @@ function ReadinessBar({ score, max, color }: { score: number; max: number; color
   const pct = Math.round((score / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${color}`}
           style={{ width: `${pct}%` }}
@@ -61,12 +61,12 @@ export default function StudentReadiness() {
   };
 
   return (
-    <AppLayout title="취업 준비율 대시보드">
-      <div className="p-6 space-y-6">
+    <AppLayout title="진도 현황">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">취업 준비율 대시보드</h1>
+          <h1 className="text-2xl font-bold">취업 준비율</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            이력서·자기소개서·포트폴리오·진로지도·취업활동 5개 항목 기준 (각 20점, 총 100점)
+            이력서·자기소개서·포트폴리오·진로지도·취업활동 5개 항목 기준 · 각 20점, 총 100점
           </p>
         </div>
 

@@ -47,8 +47,8 @@ export default function ProfessorStudents() {
   });
 
   return (
-    <AppLayout title="학생 관리">
-      <div className="p-6 space-y-6">
+    <AppLayout title="교육생">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {/* Filters */}
         <div className="flex gap-3 flex-wrap">
           <div className="relative flex-1 min-w-48">

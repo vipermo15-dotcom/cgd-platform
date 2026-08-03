@@ -152,8 +152,8 @@ export default function AdminUsers() {
   };
 
   return (
-    <AppLayout title="회원 관리">
-      <div className="p-6 space-y-6">
+    <AppLayout title="교육생">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {/* ─── 탭: 회원 목록 / 매칭 이력 ─── */}
         <Tabs defaultValue="users">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
@@ -445,7 +445,7 @@ export default function AdminUsers() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* 재학생 선택 */}
             <div>
               <div className="flex items-center justify-between mb-2">

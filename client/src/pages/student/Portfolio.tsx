@@ -240,8 +240,8 @@ export default function StudentPortfolio() {
   });
 
   return (
-    <AppLayout title="포트폴리오 관리">
-      <div className="p-6 space-y-6 pb-20 lg:pb-6">
+    <AppLayout title="포트폴리오">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {/* Portfolio list */}
         <div>
           <div className="flex items-center justify-between mb-4">

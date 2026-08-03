@@ -8,9 +8,9 @@ export default function TrainingCompanies() {
   const { data: companies = [] } = trpc.training.getPartnerCompanies.useQuery({});
 
   return (
-    <AppLayout title="산학협력 기업 목록">
-      <div className="p-6 space-y-4">
-        <p className="text-sm text-muted-foreground">{companies.length}개 협력기업</p>
+    <AppLayout title="협력기업 관리">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-4">
+        <p className="text-sm text-muted-foreground">협력기업 {companies.length}개</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {companies.length === 0 ? (
             <div className="col-span-full text-center py-12 text-muted-foreground">등록된 협력기업이 없습니다.</div>

@@ -26,7 +26,7 @@ export default function ProfessorStats() {
 
   return (
     <AppLayout title="통계 & 보고서">
-      <div className="p-6 space-y-6">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {/* Download buttons */}
         <div className="flex gap-3 flex-wrap">
           <Button
@@ -52,14 +52,14 @@ export default function ProfessorStats() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "전체 재학생", value: stats?.totalStudents ?? 0 },
-            { label: "취업 확정", value: stats?.employedStudents ?? 0 },
+            { label: "전체 재학생", value: `${stats?.totalStudents ?? 0}명` },
+            { label: "취업 확정", value: `${stats?.employedStudents ?? 0}명` },
             { label: "취업률", value: `${stats?.employmentRate ?? 0}%` },
-            { label: "총 포트폴리오", value: stats?.totalPortfolios ?? 0 },
+            { label: "총 포트폴리오", value: `${stats?.totalPortfolios ?? 0}건` },
           ].map((s) => (
             <Card key={s.label}>
               <CardContent className="p-4 text-center">
-                <p className="text-2xl font-bold text-primary">{s.value}</p>
+                <p className="text-2xl font-bold text-foreground tabular-nums">{s.value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
               </CardContent>
             </Card>

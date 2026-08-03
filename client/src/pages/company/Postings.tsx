@@ -59,8 +59,8 @@ export default function CompanyPostings() {
   };
 
   return (
-    <AppLayout title="채용공고 관리">
-      <div className="p-6 space-y-6">
+    <AppLayout title="채용공고">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">등록한 공고는 관리자 승인 후 게시됩니다.</p>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>

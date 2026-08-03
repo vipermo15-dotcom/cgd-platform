@@ -1654,8 +1654,8 @@ function PortfolioStrategyTab() {
 
 export default function StudentAIAgents() {
   return (
-    <AppLayout title="AI 취업진로 에이전트">
-      <div className="p-3 lg:p-6 space-y-4 lg:space-y-6 pb-20 lg:pb-6">
+    <AppLayout title="상담">
+      <div className="max-w-[1180px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-4 md:space-y-6">
         <div>
           <p className="text-xs lg:text-sm text-muted-foreground">
             사전 설문 · 진로 상담 · 포트폴리오 코치 · 자기소개서 · 면접 준비 · 학습 로드맵 · 점수 · 준비도 · 주간 리포트

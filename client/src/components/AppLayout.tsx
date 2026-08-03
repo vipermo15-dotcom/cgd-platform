@@ -1,45 +1,35 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { trpc } from "@/lib/trpc";
 import {
   BarChart3,
   Bell,
-  BookMarked,
   BookOpen,
-  FolderCheck,
-  Bot,
   Briefcase,
   Building2,
-  ChevronDown,
-  ClipboardList,
   FileText,
   GraduationCap,
   Home,
-  LayoutDashboard,
   LogOut,
-  Menu,
+  MessageSquare,
   MessageSquarePlus,
   Settings,
   Users,
   FolderOpen,
   TrendingUp,
-  Award,
-  Building,
-  CheckSquare,
-  Activity,
-  Map,
-  PieChart,
   Trophy,
-  Target,
-  PencilLine,
   Sparkles,
-  HeartHandshake,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -85,24 +75,22 @@ function UpdatePanel() {
 
   return (
     <>
-      {/* 알림 벨 버튼 */}
       <button
         onClick={handleOpen}
         className="relative h-9 w-9 flex items-center justify-center rounded-lg hover:bg-accent transition-colors"
         title="업데이트 소식"
       >
-        <Bell size={18} className="text-muted-foreground" />
+        <Bell size={18} strokeWidth={1.75} className="text-muted-foreground" />
         {isNew && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
         )}
       </button>
 
-      {/* 사이드 패널 */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="w-80 p-0">
           <div className="flex items-center justify-between px-5 py-4 border-b">
             <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-primary" />
+              <Sparkles size={16} strokeWidth={1.75} className="text-primary" />
               <h2 className="font-semibold text-sm">업데이트 소식</h2>
               <Badge className="text-xs bg-primary text-white">v{APP_VERSION}</Badge>
             </div>
@@ -136,135 +124,191 @@ function UpdatePanel() {
   );
 }
 
-type NavItem = {
+// ─── 좌측 아이콘 레일 — B시안(진도 그리드형) 내비게이션 ───────────────────────
+// 역할별 최상위 메뉴는 3~4개로 제한하고, 기존에 있던 세부 페이지는
+// 각 그룹의 서브탭(칩)으로 이동시켜 라우트를 하나도 잃지 않는다.
+
+type SubItem = { label: string; href: string };
+
+type RailGroup = {
+  key: string;
   label: string;
-  href: string;
   icon: React.ReactNode;
-  badge?: string;
+  href: string;
+  primaryLabel?: string;
+  subItems?: SubItem[];
 };
 
-function getNavItems(role: string): NavItem[] {
+type ProfileItem = { label: string; href: string; icon: React.ReactNode };
+
+const ICON = 21;
+const STROKE = 1.75;
+
+function getRailGroups(role: string): RailGroup[] {
   switch (role) {
     case "student":
       return [
-        { label: "홈", href: "/student", icon: <Home size={18} /> },
-        { label: "포트폴리오 관리", href: "/student/portfolio", icon: <FolderOpen size={18} /> },
-        { label: "AI 역량 분석", href: "/student/ai-analysis", icon: <Bot size={18} /> },
-        { label: "AI 취업진로 에이전트", href: "/student/ai-agents", icon: <Sparkles size={18} /> },
-        { label: "AI 자기소개서", href: "/student/cover-letter", icon: <FileText size={18} /> },
-        { label: "채용공고", href: "/student/jobs", icon: <Briefcase size={18} /> },
-        { label: "희망기업 매칭", href: "/student/job-matching", icon: <Target size={18} /> },
-        { label: "채용공고 첨삭", href: "/student/job-coaching", icon: <PencilLine size={18} /> },
-        { label: "지원 현황", href: "/student/applications", icon: <ClipboardList size={18} /> },
-        { label: "서류 등록 센터", href: "/student/documents", icon: <FolderCheck size={18} /> },
-        { label: "진로 진행 현황", href: "/student/career-progress", icon: <TrendingUp size={18} /> },
-        { label: "내 프로필", href: "/student/profile", icon: <Settings size={18} /> },
-        { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
-        { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
-        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
-      ];
-    case "professor":
-      // 학과장(admin)과 동일한 권한 — 윤한정 교수님 포함
-      return [
-        { label: "대시보드", href: "/admin", icon: <LayoutDashboard size={18} /> },
-        { label: "취업 준비율", href: "/admin/student-readiness", icon: <TrendingUp size={18} /> },
-        { label: "회원 관리", href: "/admin/users", icon: <Users size={18} /> },
-        { label: "공고 승인", href: "/admin/postings", icon: <CheckSquare size={18} /> },
-        { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
-        { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
-        { label: "AI 로그", href: "/admin/ai-logs", icon: <Activity size={18} /> },
-        { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
-        { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
-        { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
-        { label: "사후지도", href: "/admin/follow-up", icon: <HeartHandshake size={18} /> },
-        { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={18} /> },
-        { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
-        { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
-        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
-        { label: "피드백 결과 보기", href: "/admin/feedback-results", icon: <BarChart3 size={18} /> },
-      ];
-    case "company":
-      return [
-        { label: "인재 탐색", href: "/company/talent", icon: <Users size={18} /> },
-        { label: "채용공고 관리", href: "/company/postings", icon: <Briefcase size={18} /> },
-      ];
-    case "training_center":
-      return [
-        { label: "대시보드", href: "/training", icon: <LayoutDashboard size={18} /> },
-        { label: "취업 준비율", href: "/admin/student-readiness", icon: <TrendingUp size={18} /> },
-        { label: "교육생 관리 (열람)", href: "/professor/students", icon: <Users size={18} /> },
-        { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
-        { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
-        { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
-        { label: "사후지도", href: "/admin/follow-up", icon: <HeartHandshake size={18} /> },
-        { label: "협력기업 관리", href: "/training/companies", icon: <Building2 size={18} /> },
-        { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
-        { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
-        { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
-        { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
-        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
-        { label: "피드백 결과 보기", href: "/admin/feedback-results", icon: <BarChart3 size={18} /> },
+        { key: "home", label: "홈", href: "/student", icon: <Home size={ICON} strokeWidth={STROKE} /> },
+        {
+          key: "progress", label: "내 진도", href: "/student/career-progress",
+          primaryLabel: "진로 진행 현황",
+          icon: <TrendingUp size={ICON} strokeWidth={STROKE} />,
+          subItems: [
+            { label: "지원 현황", href: "/student/applications" },
+            { label: "채용공고", href: "/student/jobs" },
+            { label: "희망기업 매칭", href: "/student/job-matching" },
+            { label: "채용공고 첨삭", href: "/student/job-coaching" },
+          ],
+        },
+        {
+          key: "portfolio", label: "포트폴리오", href: "/student/portfolio",
+          icon: <FolderOpen size={ICON} strokeWidth={STROKE} />,
+          subItems: [{ label: "서류 등록 센터", href: "/student/documents" }],
+        },
+        {
+          key: "counseling", label: "상담", href: "/student/ai-agents",
+          primaryLabel: "AI 취업진로 에이전트",
+          icon: <MessageSquare size={ICON} strokeWidth={STROKE} />,
+          subItems: [
+            { label: "AI 자기소개서", href: "/student/cover-letter" },
+            { label: "AI 역량 분석", href: "/student/ai-analysis" },
+          ],
+        },
       ];
     case "admin":
       return [
-        { label: "대시보드", href: "/admin", icon: <LayoutDashboard size={18} /> },
-        { label: "취업 준비율", href: "/admin/student-readiness", icon: <TrendingUp size={18} /> },
-        { label: "회원 관리", href: "/admin/users", icon: <Users size={18} /> },
-        { label: "공고 승인", href: "/admin/postings", icon: <CheckSquare size={18} /> },
-        { label: "AI 자동 매칭", href: "/admin/ai-matching", icon: <Sparkles size={18} /> },
-        { label: "채용공고 첨삭", href: "/admin/job-coaching", icon: <PencilLine size={18} /> },
-        { label: "AI 로그", href: "/admin/ai-logs", icon: <Activity size={18} /> },
-        { label: "진로지도 카드", href: "/admin/career-guidance", icon: <Map size={18} /> },
-        { label: "업체 파이프라인", href: "/admin/pipeline", icon: <Building size={18} /> },
-        { label: "취업률 현황", href: "/admin/employment-stats", icon: <PieChart size={18} /> },
-        { label: "사후지도", href: "/admin/follow-up", icon: <HeartHandshake size={18} /> },
-        { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={18} /> },
-        { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
-        { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
-        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
-        { label: "피드백 결과 보기", href: "/admin/feedback-results", icon: <BarChart3 size={18} /> },
+        {
+          key: "home", label: "홈", href: "/admin",
+          primaryLabel: "대시보드",
+          icon: <Home size={ICON} strokeWidth={STROKE} />,
+          subItems: [{ label: "AI 로그", href: "/admin/ai-logs" }],
+        },
+        {
+          key: "students", label: "교육생", href: "/admin/users",
+          primaryLabel: "회원 관리",
+          icon: <Users size={ICON} strokeWidth={STROKE} />,
+          subItems: [
+            { label: "진로지도 카드", href: "/admin/career-guidance" },
+            { label: "AI 자동 매칭", href: "/admin/ai-matching" },
+            { label: "채용공고 첨삭", href: "/admin/job-coaching" },
+          ],
+        },
+        {
+          key: "progress-status", label: "진도 현황", href: "/admin/student-readiness",
+          primaryLabel: "취업 준비율",
+          icon: <TrendingUp size={ICON} strokeWidth={STROKE} />,
+          subItems: [
+            { label: "취업률 현황", href: "/admin/employment-stats" },
+            { label: "사후지도", href: "/admin/follow-up" },
+          ],
+        },
+        {
+          key: "jobs-companies", label: "취업·업체", href: "/admin/pipeline",
+          primaryLabel: "업체 파이프라인",
+          icon: <Briefcase size={ICON} strokeWidth={STROKE} />,
+          subItems: [{ label: "공고 승인", href: "/admin/postings" }],
+        },
+      ];
+    case "professor":
+      // 교수 전용 라우트(/professor/*) 기준 — /admin, /admin/users, /admin/ai-logs, /admin/postings는
+      // RoleGuard가 admin 전용으로 막고 있어 교수 계정에서는 열리지 않는다.
+      return [
+        {
+          key: "home", label: "홈", href: "/professor",
+          primaryLabel: "대시보드",
+          icon: <Home size={ICON} strokeWidth={STROKE} />,
+        },
+        {
+          key: "students", label: "교육생", href: "/professor/students",
+          primaryLabel: "학생 관리",
+          icon: <Users size={ICON} strokeWidth={STROKE} />,
+          subItems: [
+            { label: "서류 검토", href: "/professor/documents" },
+            { label: "진로지도 카드", href: "/admin/career-guidance" },
+            { label: "AI 자동 매칭", href: "/admin/ai-matching" },
+          ],
+        },
+        {
+          key: "progress-status", label: "진도 현황", href: "/admin/student-readiness",
+          primaryLabel: "취업 준비율",
+          icon: <TrendingUp size={ICON} strokeWidth={STROKE} />,
+          subItems: [
+            { label: "취업률 현황", href: "/admin/employment-stats" },
+            { label: "통계 & 보고서", href: "/professor/stats" },
+            { label: "사후지도", href: "/admin/follow-up" },
+          ],
+        },
+        {
+          key: "jobs-companies", label: "취업·업체", href: "/admin/pipeline",
+          primaryLabel: "업체 파이프라인",
+          icon: <Briefcase size={ICON} strokeWidth={STROKE} />,
+          subItems: [{ label: "채용공고 첨삭", href: "/admin/job-coaching" }],
+        },
+      ];
+    case "training_center":
+      return [
+        {
+          key: "home", label: "홈", href: "/training",
+          primaryLabel: "대시보드",
+          icon: <Home size={ICON} strokeWidth={STROKE} />,
+          subItems: [
+            { label: "AI 자동 매칭", href: "/admin/ai-matching" },
+            { label: "채용공고 첨삭", href: "/admin/job-coaching" },
+          ],
+        },
+        {
+          key: "org-status", label: "기관 현황", href: "/admin/student-readiness",
+          primaryLabel: "취업 준비율",
+          icon: <Building2 size={ICON} strokeWidth={STROKE} />,
+          subItems: [
+            { label: "교육생 관리 (열람)", href: "/professor/students" },
+            { label: "진로지도 카드", href: "/admin/career-guidance" },
+            { label: "협력기업 관리", href: "/training/companies" },
+            { label: "AI 기업-학생 매칭", href: "/training/matching" },
+            { label: "업체 파이프라인", href: "/admin/pipeline" },
+          ],
+        },
+        {
+          key: "report", label: "리포트", href: "/admin/employment-stats",
+          primaryLabel: "취업률 현황",
+          icon: <FileText size={ICON} strokeWidth={STROKE} />,
+          subItems: [{ label: "사후지도", href: "/admin/follow-up" }],
+        },
+      ];
+    case "company":
+      return [
+        { key: "postings", label: "채용공고", href: "/company/postings", icon: <Briefcase size={ICON} strokeWidth={STROKE} /> },
+        { key: "talent", label: "실습생", href: "/company/talent", primaryLabel: "인재 탐색", icon: <Users size={ICON} strokeWidth={STROKE} /> },
       ];
     default:
       return [];
   }
 }
 
-// ─── 사이드바 그룹(접이식) ────────────────────────────────────────────────────
-type NavGroup = { title?: string; items: NavItem[] };
-
-// 교육생: 유사 기능을 6개 그룹으로 묶어 인지 부하를 줄인다(기존 페이지·URL 유지).
-function getNavGroups(role: string): NavGroup[] {
-  if (role === "student") {
-    return [
-      { items: [{ label: "홈", href: "/student", icon: <Home size={18} /> }] },
-      { title: "내 서류", items: [
-        { label: "포트폴리오 관리", href: "/student/portfolio", icon: <FolderOpen size={18} /> },
-        { label: "서류 등록 센터", href: "/student/documents", icon: <FolderCheck size={18} /> },
-      ] },
-      { title: "AI 취업지원", items: [
-        { label: "AI 취업진로 에이전트", href: "/student/ai-agents", icon: <Sparkles size={18} /> },
-        { label: "AI 역량 분석", href: "/student/ai-analysis", icon: <Bot size={18} /> },
-        { label: "AI 자기소개서", href: "/student/cover-letter", icon: <FileText size={18} /> },
-      ] },
-      { title: "채용·지원", items: [
-        { label: "채용공고", href: "/student/jobs", icon: <Briefcase size={18} /> },
-        { label: "희망기업 매칭", href: "/student/job-matching", icon: <Target size={18} /> },
-        { label: "채용공고 첨삭", href: "/student/job-coaching", icon: <PencilLine size={18} /> },
-        { label: "지원 현황", href: "/student/applications", icon: <ClipboardList size={18} /> },
-      ] },
-      { title: "진로 진행", items: [
-        { label: "진로 진행 현황", href: "/student/career-progress", icon: <TrendingUp size={18} /> },
-      ] },
-      { title: "기타", items: [
-        { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={18} /> },
-        { label: "내 프로필", href: "/student/profile", icon: <Settings size={18} /> },
-        { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={18} /> },
-        { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={18} /> },
-      ] },
-    ];
+function getProfileItems(role: string): ProfileItem[] {
+  const common: ProfileItem[] = [
+    { label: "학습 자료 허브", href: "/learning-hub", icon: <GraduationCap size={16} strokeWidth={STROKE} /> },
+    { label: "사용 매뉴얼", href: "/manual", icon: <BookOpen size={16} strokeWidth={STROKE} /> },
+    { label: "플랫폼 피드백", href: "/feedback", icon: <MessageSquarePlus size={16} strokeWidth={STROKE} /> },
+  ];
+  switch (role) {
+    case "student":
+      return [
+        { label: "내 프로필", href: "/student/profile", icon: <Settings size={16} strokeWidth={STROKE} /> },
+        ...common,
+      ];
+    case "professor":
+    case "admin":
+      return [
+        ...common,
+        { label: "취업 축하 배너", href: "/admin/banners", icon: <Trophy size={16} strokeWidth={STROKE} /> },
+        { label: "피드백 결과 보기", href: "/admin/feedback-results", icon: <BarChart3 size={16} strokeWidth={STROKE} /> },
+      ];
+    case "training_center":
+      return [...common, { label: "피드백 결과 보기", href: "/admin/feedback-results", icon: <BarChart3 size={16} strokeWidth={STROKE} /> }];
+    default:
+      return [];
   }
-  // 그 외 역할은 기존 평면 메뉴 유지
-  return [{ items: getNavItems(role) }];
 }
 
 function getRoleLabel(role: string) {
@@ -278,109 +322,89 @@ function getRoleLabel(role: string) {
   return map[role] ?? role;
 }
 
-function getRoleColor(role: string) {
-  const map: Record<string, string> = {
-    student: "bg-blue-500",
-    professor: "bg-purple-500",
-    company: "bg-orange-500",
-    training_center: "bg-green-500",
-    admin: "bg-red-500",
-  };
-  return map[role] ?? "bg-gray-500";
+function getActiveGroupKey(groups: RailGroup[], location: string): string | undefined {
+  let best: { key: string; len: number } | undefined;
+  for (const g of groups) {
+    const hrefs = [g.href, ...(g.subItems?.map((s) => s.href) ?? [])];
+    for (const href of hrefs) {
+      if (location === href || location.startsWith(href + "/")) {
+        if (!best || href.length > best.len) best = { key: g.key, len: href.length };
+      }
+    }
+  }
+  return best?.key;
 }
 
-function SidebarContent({ onClose }: { onClose?: () => void }) {
+function ProfileMenu({ align = "start" }: { align?: "start" | "end" }) {
   const { user, logout } = useAuth();
-  const [location] = useLocation();
-  const navGroups = getNavGroups(user?.role ?? "");
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const toggleGroup = (title: string) => setCollapsed((p) => ({ ...p, [title]: !p[title] }));
+  const items = getProfileItems(user?.role ?? "");
 
   return (
-    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
-      {/* Logo */}
-      <div className="p-5 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <GraduationCap size={20} className="text-white" />
-          </div>
-          <div>
-            <p className="font-bold text-sm leading-tight text-sidebar-foreground">CGD 취업지원</p>
-            <p className="text-xs text-sidebar-foreground/60">서울시기술교육원</p>
-          </div>
-        </div>
-      </div>
-
-      {/* User info */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold", getRoleColor(user?.role ?? ""))}>
-            {user?.name?.[0] ?? "?"}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name ?? "사용자"}</p>
-            <p className="text-xs text-sidebar-foreground/60">{getRoleLabel(user?.role ?? "")}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <ScrollArea className="flex-1 py-3">
-        <nav className="px-3 space-y-1">
-          {navGroups.map((group, gi) => {
-            const isOpen = group.title ? !collapsed[group.title] : true;
-            const renderItem = (item: NavItem) => {
-              const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
-                    isActive
-                      ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                  {item.badge && (
-                    <Badge className="ml-auto text-xs bg-red-500 text-white">{item.badge}</Badge>
-                  )}
-                </Link>
-              );
-            };
-            return (
-              <div key={group.title ?? `g${gi}`} className="space-y-1">
-                {group.title && (
-                  <button
-                    onClick={() => toggleGroup(group.title!)}
-                    className="flex items-center gap-1.5 w-full px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
-                  >
-                    <ChevronDown size={12} className={cn("transition-transform", !isOpen && "-rotate-90")} />
-                    {group.title}
-                  </button>
-                )}
-                {isOpen && group.items.map(renderItem)}
-              </div>
-            );
-          })}
-        </nav>
-      </ScrollArea>
-
-      {/* Logout */}
-      <div className="p-4 border-t border-sidebar-border">
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          onClick={logout}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="w-[34px] h-[34px] rounded-full bg-secondary text-secondary-foreground flex items-center justify-center text-sm font-semibold hover:opacity-80 transition-opacity shrink-0"
+          title={user?.name ?? "내 프로필"}
         >
-          <LogOut size={18} />
+          {user?.name?.[0] ?? "?"}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={align} className="w-56">
+        <DropdownMenuLabel>
+          <p className="text-sm font-medium truncate">{user?.name ?? "사용자"}</p>
+          <p className="text-xs font-normal text-muted-foreground">{getRoleLabel(user?.role ?? "")}</p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {items.map((item) => (
+          <DropdownMenuItem key={item.href} asChild>
+            <Link href={item.href} className="flex items-center gap-2">
+              {item.icon}
+              {item.label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-destructive focus:text-destructive">
+          <LogOut size={16} strokeWidth={STROKE} />
           로그아웃
-        </Button>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function IconRail({ groups, activeKey }: { groups: RailGroup[]; activeKey?: string }) {
+  return (
+    <aside className="hidden md:flex w-24 flex-shrink-0 flex-col items-center bg-sidebar border-r border-sidebar-border py-5">
+      <Link href="/" className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center mb-6 shrink-0">
+        <GraduationCap size={20} strokeWidth={STROKE} className="text-white" />
+      </Link>
+
+      <nav className="flex-1 flex flex-col items-center gap-1.5 w-full px-2">
+        {groups.map((g) => {
+          const isActive = g.key === activeKey;
+          return (
+            <Link
+              key={g.key}
+              href={g.href}
+              className={cn(
+                "w-full flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg transition-colors",
+                isActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              )}
+            >
+              {g.icon}
+              <span className="text-[11px] leading-none">{g.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="mt-2">
+        <ProfileMenu align="end" />
       </div>
-    </div>
+    </aside>
   );
 }
 
@@ -391,63 +415,91 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children, title }: AppLayoutProps) {
   const { user } = useAuth();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [location] = useLocation();
+  const groups = getRailGroups(user?.role ?? "");
+  const activeKey = getActiveGroupKey(groups, location);
+  const activeGroup = groups.find((g) => g.key === activeKey);
+  const chips: SubItem[] | undefined = activeGroup?.subItems?.length
+    ? [{ label: activeGroup.primaryLabel ?? activeGroup.label, href: activeGroup.href }, ...activeGroup.subItems]
+    : undefined;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-60 flex-shrink-0 flex-col border-r border-border">
-        <SidebarContent />
-      </aside>
+      <IconRail groups={groups} activeKey={activeKey} />
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="h-14 border-b border-border bg-card flex items-center px-4 gap-4 flex-shrink-0">
-          {/* Mobile menu */}
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="lg:hidden">
-                <Menu size={20} />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-60">
-              <SidebarContent onClose={() => setMobileOpen(false)} />
-            </SheetContent>
-          </Sheet>
+        <header className="h-16 border-b border-sidebar-border bg-card flex items-center px-4 md:px-8 gap-4 flex-shrink-0">
+          {/* Mobile logo (rail hidden below md) */}
+          <Link href="/" className="md:hidden w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <GraduationCap size={16} strokeWidth={STROKE} className="text-white" />
+          </Link>
 
-          {title && <h1 className="text-base font-semibold text-foreground">{title}</h1>}
-          <div className="ml-auto flex items-center gap-1">
+          {/* 칩이 있는 화면은 모바일에서 타이틀과 첫 칩이 중복되므로 타이틀을 데스크톱에만 노출 */}
+          {title && (
+            <h1 className={cn("text-base font-semibold text-foreground shrink-0", chips && "hidden md:block")}>
+              {title}
+            </h1>
+          )}
+
+          {chips && (
+            <div className="flex-1 min-w-0 overflow-x-auto">
+              <div className="flex items-center gap-2 w-max">
+                {chips.map((chip) => {
+                  const isChipActive = location === chip.href || location.startsWith(chip.href + "/");
+                  return (
+                    <Link
+                      key={chip.href}
+                      href={chip.href}
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors border",
+                        isChipActive
+                          ? "bg-secondary text-secondary-foreground border-transparent font-medium"
+                          : "text-muted-foreground border-border hover:bg-accent"
+                      )}
+                    >
+                      {chip.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="ml-auto flex items-center gap-1 shrink-0">
             <UpdatePanel />
             <NotificationDropdown />
+            <div className="md:hidden ml-1">
+              <ProfileMenu align="end" />
+            </div>
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-auto">
+        {/* Page content — 각 페이지가 자체 padding/max-width을 관리 (단계적 리디자인 중 이중 여백 방지) */}
+        <main className="flex-1 overflow-auto pb-16 md:pb-0">
           {children}
         </main>
       </div>
 
-      {/* Mobile bottom tab bar (student only) */}
-      {user?.role === "student" && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex z-50">
-          {[
-            { href: "/student", icon: <Home size={20} />, label: "홈" },
-            { href: "/student/portfolio", icon: <FolderOpen size={20} />, label: "포트폴리오" },
-            { href: "/student/jobs", icon: <Briefcase size={20} />, label: "채용공고" },
-            { href: "/student/ai-analysis", icon: <Bot size={20} />, label: "AI분석" },
-            { href: "/student/profile", icon: <Settings size={20} />, label: "내정보" },
-          ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex-1 flex flex-col items-center py-2 gap-1 text-muted-foreground hover:text-primary transition-colors"
-            >
-              {item.icon}
-              <span className="text-xs">{item.label}</span>
-            </Link>
-          ))}
+      {/* Mobile bottom tab bar — 전 역할 공통 */}
+      {groups.length > 0 && (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-card border-t border-sidebar-border flex z-50">
+          {groups.map((g) => {
+            const isActive = g.key === activeKey;
+            return (
+              <Link
+                key={g.key}
+                href={g.href}
+                className={cn(
+                  "flex-1 flex flex-col items-center justify-center gap-1 min-w-11 transition-colors",
+                  isActive ? "text-primary font-medium" : "text-muted-foreground"
+                )}
+              >
+                {g.icon}
+                <span className="text-[11px] leading-none">{g.label}</span>
+              </Link>
+            );
+          })}
         </nav>
       )}
     </div>

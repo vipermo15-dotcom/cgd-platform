@@ -81,7 +81,7 @@ export default function ProfessorDashboard() {
       params.delete("status");
     }
     const newSearch = params.toString();
-    setLocation(`/professor/dashboard${newSearch ? "?" + newSearch : ""}`, { replace: true });
+    setLocation(`/professor${newSearch ? "?" + newSearch : ""}`, { replace: true });
   };
 
   // 브라우저 뒤로가기/앞으로가기 시 URL 파라미터 반영
@@ -108,22 +108,22 @@ export default function ProfessorDashboard() {
   const hasMore = displayList.length < filtered.length;
 
   return (
-    <AppLayout title="학과장 대시보드">
-      <div className="p-6 space-y-6">
+    <AppLayout title="홈">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {/* Stat cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "전체 재학생", value: stats?.totalStudents ?? 0, icon: <Users size={18} />, color: "text-blue-500", bg: "bg-blue-50" },
-            { label: "취업 확정", value: stats?.employedStudents ?? 0, icon: <Award size={18} />, color: "text-emerald-500", bg: "bg-emerald-50" },
-            { label: "취업률", value: `${stats?.employmentRate ?? 0}%`, icon: <TrendingUp size={18} />, color: "text-purple-500", bg: "bg-purple-50" },
-            { label: "총 지원건수", value: stats?.totalApplications ?? 0, icon: <Briefcase size={18} />, color: "text-orange-500", bg: "bg-orange-50" },
+            { label: "전체 재학생", value: `${stats?.totalStudents ?? 0}명`, icon: <Users size={18} strokeWidth={1.75} /> },
+            { label: "취업 확정", value: `${stats?.employedStudents ?? 0}명`, icon: <Award size={18} strokeWidth={1.75} /> },
+            { label: "취업률", value: `${stats?.employmentRate ?? 0}%`, icon: <TrendingUp size={18} strokeWidth={1.75} /> },
+            { label: "총 지원건수", value: `${stats?.totalApplications ?? 0}건`, icon: <Briefcase size={18} strokeWidth={1.75} /> },
           ].map((s) => (
             <Card key={s.label}>
               <CardContent className="p-5">
-                <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3 ${s.color}`}>
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-3 text-foreground">
                   {s.icon}
                 </div>
-                <p className="text-2xl font-bold">{s.value}</p>
+                <p className="text-2xl font-bold tabular-nums">{s.value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
               </CardContent>
             </Card>

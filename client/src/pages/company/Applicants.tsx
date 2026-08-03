@@ -51,7 +51,7 @@ export default function CompanyApplicants() {
 
   return (
     <AppLayout title="지원자 관리">
-      <div className="p-6 space-y-6">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         <Link href="/company/postings">
           <Button variant="ghost" size="sm" className="gap-2"><ArrowLeft size={16} /> 공고 목록</Button>
         </Link>

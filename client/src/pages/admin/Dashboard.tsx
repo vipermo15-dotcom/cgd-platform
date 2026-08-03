@@ -98,10 +98,10 @@ export default function AdminDashboard() {
   };
 
   return (
-    <AppLayout title="관리자 대시보드">
+    <AppLayout title="홈">
       <OnboardingDialog />
 
-      <div className="p-3 lg:p-6 space-y-4 lg:space-y-5">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
 
         {/* 버전 + 업데이트 배너 */}
         {!bannerDismissed && (
@@ -135,20 +135,20 @@ export default function AdminDashboard() {
         {/* 통계 카드 */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {[
-            { label: "전체 회원", value: stats?.totalUsers ?? 0, icon: <Users size={18} />, color: "text-blue-500", bg: "bg-blue-50", href: "/admin/users" },
-            { label: "채용공고", value: stats?.totalPostings ?? 0, icon: <Briefcase size={18} />, color: "text-purple-500", bg: "bg-purple-50", href: "/admin/postings" },
-            { label: "포트폴리오", value: stats?.totalPortfolios ?? 0, icon: <FileText size={18} />, color: "text-emerald-500", bg: "bg-emerald-50", href: "/admin/users" },
-            { label: "AI 분석", value: stats?.totalAiAnalyses ?? 0, icon: <Bot size={18} />, color: "text-orange-500", bg: "bg-orange-50", href: "/admin/ai-logs" },
-            { label: "취업 확정", value: stats?.employedStudents ?? 0, icon: <Award size={18} />, color: "text-green-500", bg: "bg-green-50", href: "/admin/employment-stats" },
-            { label: "취업률", value: `${stats?.employmentRate ?? 0}%`, icon: <Trophy size={18} />, color: "text-amber-500", bg: "bg-amber-50", href: "/admin/employment-stats" },
+            { label: "전체 회원", value: `${stats?.totalUsers ?? 0}명`, icon: <Users size={18} strokeWidth={1.75} />, href: "/admin/users" },
+            { label: "채용공고", value: `${stats?.totalPostings ?? 0}건`, icon: <Briefcase size={18} strokeWidth={1.75} />, href: "/admin/postings" },
+            { label: "포트폴리오", value: `${stats?.totalPortfolios ?? 0}건`, icon: <FileText size={18} strokeWidth={1.75} />, href: "/admin/users" },
+            { label: "AI 분석", value: `${stats?.totalAiAnalyses ?? 0}건`, icon: <Bot size={18} strokeWidth={1.75} />, href: "/admin/ai-logs" },
+            { label: "취업 확정", value: `${stats?.employedStudents ?? 0}명`, icon: <Award size={18} strokeWidth={1.75} />, href: "/admin/employment-stats" },
+            { label: "취업률", value: `${stats?.employmentRate ?? 0}%`, icon: <Trophy size={18} strokeWidth={1.75} />, href: "/admin/employment-stats" },
           ].map((s) => (
             <Link key={s.label} href={s.href}>
               <Card className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-5">
-                  <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3 ${s.color}`}>
+                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-3 text-foreground">
                     {s.icon}
                   </div>
-                  <p className="text-2xl font-bold">{s.value}</p>
+                  <p className="text-2xl font-bold tabular-nums">{s.value}</p>
                   <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
                 </CardContent>
               </Card>

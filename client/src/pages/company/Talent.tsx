@@ -26,8 +26,8 @@ export default function CompanyTalent() {
   });
 
   return (
-    <AppLayout title="인재 탐색">
-      <div className="p-6 space-y-6">
+    <AppLayout title="실습생">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
         {/* Filters */}
         <div className="flex gap-3 flex-wrap">
           <div className="relative flex-1 min-w-48">
