@@ -2,9 +2,9 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getLoginUrl } from "@/const";
-import { GraduationCap, Bot, Briefcase, BarChart3, ArrowRight, Users, Building2, Award } from "lucide-react";
+import { GraduationCap, Bot, Briefcase, BarChart3, ArrowRight, Users, Building2, Award, Search } from "lucide-react";
 import { useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 export default function Home() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -71,11 +71,21 @@ export default function Home() {
             포트폴리오 관리부터 AI 역량 분석, 자기소개서 생성, 채용 연계까지
             취업의 모든 과정을 하나의 플랫폼에서 관리하세요.
           </p>
-          <a href={getLoginUrl()}>
-            <Button size="lg" className="gap-2">
-              시작하기 <ArrowRight size={18} />
-            </Button>
-          </a>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href={getLoginUrl()}>
+              <Button size="lg" className="gap-2">
+                시작하기 <ArrowRight size={18} />
+              </Button>
+            </a>
+            <Link href="/portfolio-guide">
+              <Button size="lg" variant="outline" className="gap-2">
+                <Search size={18} /> 내 포트폴리오 가이드 찾기
+              </Button>
+            </Link>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            아직 계정이 없어도 이름과 전화번호 뒷자리로 취업분야별 가이드를 바로 확인할 수 있어요.
+          </p>
         </div>
       </section>
 

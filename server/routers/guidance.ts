@@ -1,7 +1,13 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "../_core/trpc";
+import { router, protectedProcedure, publicProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
-import { createAiLog, getDb } from "../db";
+import {
+  createAiLog,
+  getDb,
+  getStudentsByExactName,
+  logPortfolioGuideLookup,
+  countRecentPortfolioGuideLookups,
+} from "../db";
 import { AI_LIMITS, enforceAiRateLimit } from "../_core/rateLimit";
 import {
   careerGuidance,
@@ -20,14 +26,48 @@ import { sanitizeForPrompt, sanitizeList, UNTRUSTED_DATA_NOTICE, wrapUntrusted }
 // ─── 진로지도 카드 ─────────────────────────────────────────────────────────────
 
 const careerTrackEnum = z.enum([
+  "editorial_design",
   "brand_design",
-  "sns_marketing",
-  "video_editing",
-  "character_goods",
-  "ai_generation",
-  "freelancer",
+  "goods_design",
+  "content_marketing",
+  "sns_content",
   "undecided",
 ]);
+
+// 5개 취업분야 → 한글 라벨 / cgd-portfolio-upgrade 분야별 가이드 링크
+// (포트폴리오 실전반 자료, 02_Portfolio_Practicum). undecided는 매핑하지 않는다.
+const TRACK_GUIDE_INFO: Record<string, { label: string; guideUrl: string }> = {
+  editorial_design: {
+    label: "편집디자인",
+    guideUrl:
+      "https://github.com/vipermo15-dotcom/cgd-portfolio-upgrade/blob/main/02_Portfolio_Practicum/01_%ED%8E%B8%EC%A7%91%EB%94%94%EC%9E%90%EC%9D%B8_%EC%8B%A4%EB%AC%B4%EA%B0%80%EC%9D%B4%EB%93%9C.md",
+  },
+  brand_design: {
+    label: "브랜드디자인",
+    guideUrl:
+      "https://github.com/vipermo15-dotcom/cgd-portfolio-upgrade/blob/main/02_Portfolio_Practicum/02_%EB%B8%8C%EB%9E%9C%EB%93%9C%EB%94%94%EC%9E%90%EC%9D%B8_%EC%8B%A4%EB%AC%B4%EA%B0%80%EC%9D%B4%EB%93%9C.md",
+  },
+  goods_design: {
+    label: "굿즈디자인",
+    guideUrl:
+      "https://github.com/vipermo15-dotcom/cgd-portfolio-upgrade/blob/main/02_Portfolio_Practicum/03_%EA%B5%BF%EC%A6%88%EB%94%94%EC%9E%90%EC%9D%B8_%EC%8B%A4%EB%AC%B4%EA%B0%80%EC%9D%B4%EB%93%9C.md",
+  },
+  content_marketing: {
+    label: "콘텐츠마케팅",
+    guideUrl:
+      "https://github.com/vipermo15-dotcom/cgd-portfolio-upgrade/blob/main/02_Portfolio_Practicum/04_%EC%BD%98%ED%85%90%EC%B8%A0%EB%A7%88%EC%BC%80%ED%8C%85_%EC%8B%A4%EB%AC%B4%EA%B0%80%EC%9D%B4%EB%93%9C.md",
+  },
+  sns_content: {
+    label: "SNS콘텐츠제작",
+    guideUrl:
+      "https://github.com/vipermo15-dotcom/cgd-portfolio-upgrade/blob/main/02_Portfolio_Practicum/05_SNS%EC%BD%98%ED%85%90%EC%B8%A0%EC%A0%9C%EC%9E%91_%EC%8B%A4%EB%AC%B4%EA%B0%80%EC%9D%B4%EB%93%9C.md",
+  },
+};
+const PORTFOLIO_WORKBOOK_URL =
+  "https://vipermo15-dotcom.github.io/cgd-portfolio-upgrade/portfolio-practicum.html";
+
+// 브루트포스 방지: 동일 이름에 대해 15분당 이 횟수를 넘는 조회 시도는 거부한다.
+const LOOKUP_RATE_LIMIT = { windowMs: 15 * 60_000, max: 8 };
 
 export const guidanceRouter = router({
   // 학생의 진로지도 카드 조회 (학생 본인 / 학과장 / 관리자)
@@ -59,6 +99,14 @@ export const guidanceRouter = router({
         studentUserId: z.number(),
         careerTrack: careerTrackEnum,
         guidanceNote: z.string().optional(),
+        guidanceDocs: z
+          .array(
+            z.object({
+              name: z.string(),
+              url: z.string(),
+            })
+          )
+          .optional(),
         checklist: z
           .array(
             z.object({
@@ -99,6 +147,7 @@ export const guidanceRouter = router({
           .set({
             careerTrack: input.careerTrack,
             guidanceNote: input.guidanceNote,
+            guidanceDocs: input.guidanceDocs ?? [],
             checklist: input.checklist ?? [],
             recommendedCompanies: input.recommendedCompanies ?? [],
             professorUserId: ctx.user.id,
@@ -111,6 +160,7 @@ export const guidanceRouter = router({
           professorUserId: ctx.user.id,
           careerTrack: input.careerTrack,
           guidanceNote: input.guidanceNote,
+          guidanceDocs: input.guidanceDocs ?? [],
           checklist: input.checklist ?? [],
           recommendedCompanies: input.recommendedCompanies ?? [],
         });
@@ -162,12 +212,11 @@ export const guidanceRouter = router({
       await enforceAiRateLimit(ctx.user.id, AI_LIMITS.recommend);
 
       const trackLabels: Record<string, string> = {
+        editorial_design: "편집 디자인",
         brand_design: "브랜드 디자인",
-        sns_marketing: "SNS 마케팅",
-        video_editing: "영상 편집",
-        character_goods: "캐릭터 굿즈",
-        ai_generation: "AI 생성",
-        freelancer: "프리랜서",
+        goods_design: "굿즈 디자인",
+        content_marketing: "콘텐츠 마케팅",
+        sns_content: "SNS 콘텐츠 제작",
         undecided: "미정",
       };
 
@@ -609,4 +658,61 @@ JSON 배열 형식으로만 응답하세요:
       banners,
     };
   }),
+
+  // ─── 포트폴리오 가이드 비로그인 조회 (이름 + 전화번호 뒷자리 4자리) ──────────────
+  // 로그인하지 않은 학생도 자신의 취업분야에 맞는 포트폴리오 가이드 링크를 받을 수 있도록
+  // 하는 공개 엔드포인트. 이름만으로는 특정할 수 없게 전화번호 뒷자리를 함께 요구하고,
+  // 동일 이름에 대한 반복 시도를 rate limit으로 막아 브루트포스를 방지한다.
+  // 실패 사유(이름 없음/전화번호 불일치)는 구분해서 응답하지 않는다 — 어떤 정보가 맞았는지
+  // 추측할 수 없게 하기 위함.
+  lookupPortfolioGuide: publicProcedure
+    .input(
+      z.object({
+        name: z.string().trim().min(1).max(50),
+        phoneLast4: z.string().regex(/^\d{4}$/, "전화번호 뒷자리 4자리 숫자를 입력해주세요."),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const recentAttempts = await countRecentPortfolioGuideLookups(input.name, LOOKUP_RATE_LIMIT.windowMs);
+      if (recentAttempts >= LOOKUP_RATE_LIMIT.max) {
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "너무 많이 시도했어요. 잠시 후 다시 시도하거나 강사에게 문의해주세요.",
+        });
+      }
+
+      const candidates = await getStudentsByExactName(input.name);
+      const matchedCandidate = candidates.find((c) => {
+        const digitsOnly = (c.profile.phone ?? "").replace(/\D/g, "");
+        return digitsOnly.endsWith(input.phoneLast4);
+      });
+
+      if (!matchedCandidate) {
+        await logPortfolioGuideLookup(input.name, false);
+        return { found: false as const };
+      }
+
+      const [guidance] = await db
+        .select({ careerTrack: careerGuidance.careerTrack })
+        .from(careerGuidance)
+        .where(eq(careerGuidance.studentUserId, matchedCandidate.user.id))
+        .limit(1);
+
+      await logPortfolioGuideLookup(input.name, true);
+
+      const track = guidance?.careerTrack ?? "undecided";
+      const trackInfo = TRACK_GUIDE_INFO[track];
+
+      return {
+        found: true as const,
+        name: matchedCandidate.user.name ?? input.name,
+        careerTrack: track,
+        trackLabel: trackInfo?.label ?? "미정",
+        guideUrl: trackInfo?.guideUrl ?? null,
+        workbookUrl: PORTFOLIO_WORKBOOK_URL,
+      };
+    }),
 });

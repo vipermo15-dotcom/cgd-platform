@@ -69,6 +69,7 @@ const LearningHub = lazy(() => import("./pages/LearningHub"));
 // Public pages
 const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
 const PublicResume = lazy(() => import("./pages/PublicResume"));
+const PortfolioGuideLookup = lazy(() => import("./pages/PortfolioGuideLookup"));
 const ManualDownload = lazy(() => import("./pages/ManualDownload"));
 const EmploymentResults = lazy(() => import("./pages/EmploymentResults"));
 
@@ -131,6 +132,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/role-setup" component={RoleSetup} />
       <Route path="/portfolio/:slug" component={PublicPortfolio} />
+      <Route path="/portfolio-guide" component={PortfolioGuideLookup} />
       <Route path="/results" component={EmploymentResults} />
       <Route path="/resume/:slug" component={PublicResume} />
       <Route path="/manual">

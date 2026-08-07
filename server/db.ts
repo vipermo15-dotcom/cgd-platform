@@ -15,6 +15,7 @@ import {
   partnerCompanies,
   portfolioItems,
   portfolios,
+  portfolioGuideLookups,
   studentProfiles,
   users,
 } from "../drizzle/schema";
@@ -150,6 +151,21 @@ export async function getAllStudents(filters?: { employmentStatus?: string; sear
     .leftJoin(studentProfiles, eq(users.id, studentProfiles.userId))
     .where(and(...conditions))
     .orderBy(desc(users.createdAt));
+}
+
+/**
+ * 이름이 정확히 일치하는 재학생 후보를 찾는다 (동명이인 대비 복수 반환 가능).
+ * 포트폴리오 가이드 비로그인 조회(이름+전화번호 뒷자리)용 — 결과가 적으므로
+ * 전화번호 뒷자리 비교는 애플리케이션 코드에서 처리한다.
+ */
+export async function getStudentsByExactName(name: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({ user: users, profile: studentProfiles })
+    .from(users)
+    .innerJoin(studentProfiles, eq(users.id, studentProfiles.userId))
+    .where(and(eq(users.role, "student"), eq(users.name, name)));
 }
 
 export async function getStudentBySlug(slug: string) {
@@ -618,6 +634,30 @@ export async function getAiLogs(limit = 50) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(aiLogs).orderBy(desc(aiLogs.createdAt)).limit(limit);
+}
+
+/**
+ * 비로그인 포트폴리오 가이드 조회(이름+전화번호 뒷자리) 시도를 기록한다.
+ * 성공/실패 모두 기록해 동일 이름에 대한 반복 시도(브루트포스)를 rate limit으로 억제한다.
+ */
+export async function logPortfolioGuideLookup(nameInput: string, matched: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(portfolioGuideLookups).values({ nameInput, matched });
+}
+
+/**
+ * 특정 이름으로 최근 windowMs 동안 시도된 포트폴리오 가이드 조회 횟수를 센다.
+ */
+export async function countRecentPortfolioGuideLookups(nameInput: string, windowMs: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const since = new Date(Date.now() - windowMs);
+  const [row] = await db
+    .select({ c: sql<number>`count(*)` })
+    .from(portfolioGuideLookups)
+    .where(and(eq(portfolioGuideLookups.nameInput, nameInput), gte(portfolioGuideLookups.createdAt, since)));
+  return Number(row?.c ?? 0);
 }
 
 /**

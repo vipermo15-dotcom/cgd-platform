@@ -407,16 +407,23 @@ export const careerGuidance = mysqlTable("career_guidance", {
   id: int("id").autoincrement().primaryKey(),
   studentUserId: int("studentUserId").notNull(),
   professorUserId: int("professorUserId"),
-  // 진로 트랙: 브랜드디자인/SNS마케팅/영상편집/캐릭터굿즈/AI생성/프리랜서
+  // 진로 트랙(취업분야): 편집디자인/브랜드디자인/굿즈디자인/콘텐츠마케팅/SNS콘텐츠제작
+  // 2026-08 재정의: 포트폴리오 실전반 5개 분야 체계와 맞춤. 기존 값(sns_marketing, video_editing,
+  // character_goods, ai_generation, freelancer)은 폐기 — drizzle/migrations의 리매핑 SQL을
+  // 먼저 실행한 뒤 이 스키마를 적용할 것 (README_MIGRATION.md 참고).
   careerTrack: mysqlEnum("careerTrack", [
-    "brand_design",
-    "sns_marketing",
-    "video_editing",
-    "character_goods",
-    "ai_generation",
-    "freelancer",
-    "undecided",
+    "editorial_design",   // 편집디자인
+    "brand_design",       // 브랜드디자인
+    "goods_design",       // 굿즈디자인
+    "content_marketing",  // 콘텐츠마케팅
+    "sns_content",        // SNS콘텐츠제작
+    "undecided",          // 미정 (기본값)
   ]).default("undecided").notNull(),
+  // 학생별 진로지도/포트폴리오가이드 문서 링크 (관리자가 DB에 등록 — 소스코드에 실명을 하드코딩하지 않기 위함)
+  guidanceDocs: json("guidanceDocs").$type<{
+    name: string;
+    url: string;
+  }[]>(),
   // 추천 취업처 (JSON 배열)
   recommendedCompanies: json("recommendedCompanies").$type<{
     companyName: string;
@@ -460,6 +467,21 @@ export const careerGuidance = mysqlTable("career_guidance", {
 
 export type CareerGuidance = typeof careerGuidance.$inferSelect;
 export type InsertCareerGuidance = typeof careerGuidance.$inferInsert;
+
+// ─── 포트폴리오 가이드 비로그인 조회 시도 로그 (브루트포스 방지용 rate limit) ───────────
+// 이름+전화번호 뒷자리로 조회하는 공개 엔드포인트는 로그인 없이 누구나 호출 가능하므로,
+// 동일 이름에 대한 짧은 시간 내 반복 시도를 막기 위해 모든 시도(성공/실패)를 기록한다.
+export const portfolioGuideLookups = mysqlTable("portfolio_guide_lookups", {
+  id: int("id").autoincrement().primaryKey(),
+  nameInput: varchar("nameInput", { length: 100 }).notNull(),
+  matched: boolean("matched").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  nameCreatedIdx: index("portfolio_guide_lookups_name_created_idx").on(t.nameInput, t.createdAt),
+}));
+
+export type PortfolioGuideLookup = typeof portfolioGuideLookups.$inferSelect;
+export type InsertPortfolioGuideLookup = typeof portfolioGuideLookups.$inferInsert;
 
 // ─── 진로 매칭 자료 (학과장이 이력서·자소서·랜딩페이지·희망 취업처를 묶어 등록) ──
 export const careerMatchingRecords = mysqlTable("career_matching_records", {

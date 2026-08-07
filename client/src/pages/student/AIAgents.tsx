@@ -789,12 +789,11 @@ function CareerChatTab() {
 // ─── B. 내 진로지도 카드 탭 ───────────────────────────────────────────────────
 
 const TRACK_LABELS: Record<string, string> = {
+  editorial_design: "편집 디자인",
   brand_design: "브랜드 디자인",
-  sns_marketing: "SNS 마케팅",
-  video_editing: "영상 편집",
-  character_goods: "캐릭터/굿즈",
-  ai_generation: "AI 생성 콘텐츠",
-  freelancer: "프리랜서",
+  goods_design: "굿즈 디자인",
+  content_marketing: "콘텐츠 마케팅",
+  sns_content: "SNS 콘텐츠 제작",
   undecided: "미정",
 };
 

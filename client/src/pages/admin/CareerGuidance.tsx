@@ -10,75 +10,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Sparkles, User, Building2, ClipboardList, ArrowRight, Wrench, Layers, FileText, Loader2, ExternalLink, ListChecks, Link2, Send, MessageSquare } from "lucide-react";
+import { Sparkles, User, Building2, ClipboardList, ArrowRight, Wrench, Layers, FileText, Loader2, ExternalLink, Link2, Send, MessageSquare, Plus, Trash2 } from "lucide-react";
 
-const WORKFLOW_URL =
-  "https://vipermo15-dotcom.github.io/cgd-ai-career-platform/docs/portfolio-workflow.html";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import StudentDocumentsDialog from "./StudentDocumentsDialog";
 
-const REPO = "vipermo15-dotcom/cgd-ai-career-platform";
-const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
-
-const STUDENT_GUIDANCE_FILES: Record<string, { name: string; path: string }[]> = {
-  "김건우": [{ name: "진로지도 (최종)", path: "docs/김건우/진로지도-김건우-20260625-최종.md" }],
-  "김규연": [
-    { name: "진로지도", path: "docs/김규연/진로지도-김규연-20260625.md" },
-    { name: "포트폴리오가이드", path: "docs/김규연/포트폴리오가이드-김규연-20260625.md" },
-  ],
-  "김민지": [
-    { name: "진로지도", path: "docs/김민지/진로지도-포트폴리오가이드/진로지도-민지-20260625.md" },
-    { name: "포트폴리오가이드", path: "docs/김민지/진로지도-포트폴리오가이드/포트폴리오가이드-민지-20260625.md" },
-  ],
-  "김승희": [
-    { name: "진로지도", path: "docs/김승희/진로지도-김승희.md" },
-    { name: "포트폴리오가이드", path: "docs/김승희/포트폴리오가이드-김승희.md" },
-  ],
-  "박민서": [
-    { name: "진로지도", path: "docs/박민서/진로지도-박민서-20260625.md" },
-    { name: "이력서분석", path: "docs/박민서/진로지도-이력서분석-박민서-20260625.md" },
-    { name: "포트폴리오가이드", path: "docs/박민서/포트폴리오가이드-박민서-20260625.md" },
-  ],
-  "박세은": [{ name: "포트폴리오가이드", path: "docs/박세은/포트폴리오가이드-박세은.md" }],
-  "박소현": [
-    { name: "진로지도", path: "docs/박소현/진로지도-소현-20260625.md" },
-    { name: "포트폴리오가이드", path: "docs/박소현/포트폴리오가이드-소현-20260625.md" },
-  ],
-  "박연": [
-    { name: "진로지도", path: "docs/박연/진로지도-연-20260625.md" },
-    { name: "핸즈픽 분석", path: "docs/박연/진로지도-연-핸즈픽분석-20260625.md" },
-    { name: "포트폴리오가이드", path: "docs/박연/포트폴리오가이드-연-20260625.md" },
-  ],
-  "박홍덕": [{ name: "진로지도", path: "docs/박홍덕/진로지도-박홍덕-20260625.md" }],
-  "서두원": [{ name: "진로지도 종합", path: "docs/서두원/진로지도-서두원-종합문서-20260625.md" }],
-  "이윤정": [{ name: "진로지도", path: "docs/이윤정/진로지도_ 이윤정.md" }],
-  "이윤채": [{ name: "이력서분석", path: "docs/이윤채/이력서분석-이윤채-20260625.md" }],
-  "임효정": [
-    { name: "진로지도 가이드", path: "docs/임효정/진로지도-가이드-임효정.md" },
-    { name: "포트폴리오 가이드", path: "docs/임효정/포트폴리오-가이드-임효정.md" },
-  ],
-  "장아름": [
-    { name: "공고분석", path: "docs/장아름/공고분석-장아름-20260625.md" },
-    { name: "진로지도", path: "docs/장아름/진로지도-아름-20260625.md" },
-    { name: "포트폴리오가이드", path: "docs/장아름/포트폴리오가이드-아름-20260625.md" },
-  ],
-  "장혜정": [{ name: "포트폴리오가이드", path: "docs/장혜정/포트폴리오가이드-장혜정.md" }],
-  "정채원": [
-    { name: "진로지도", path: "docs/정채원/진로지도-정채원-20260625.md" },
-    { name: "포트폴리오가이드", path: "docs/정채원/포트폴리오가이드-정채원-20260625.md" },
-  ],
-  "조수정": [{ name: "진로지도 (최종)", path: "docs/조수정/진로지도-조수정-20260625-최종.md" }],
-  "황상민": [{ name: "진로지도 (최종)", path: "docs/황상민/진로지도-황상민-최종-20260625.md" }],
-};
+// 2026-08 변경: 학생별 진로지도/포트폴리오가이드 문서 목록은 더 이상 소스코드에
+// 실명 목록으로 하드코딩하지 않는다(공개 저장소 개인정보 노출 이슈).
+// 대신 career_guidance.guidanceDocs(DB)에 학생별로 {name, url}을 등록해 관리한다 —
+// 아래 "진로지도 자료" 탭에서 관리자가 직접 추가/삭제한다.
 
 const CAREER_TRACKS = [
+  { value: "editorial_design", label: "편집 디자인" },
   { value: "brand_design", label: "브랜드 디자인" },
-  { value: "sns_marketing", label: "SNS 마케팅" },
-  { value: "video_editing", label: "영상 편집" },
-  { value: "character_goods", label: "캐릭터 굿즈" },
-  { value: "ai_generation", label: "AI 생성" },
-  { value: "freelancer", label: "프리랜서" },
+  { value: "goods_design", label: "굿즈 디자인" },
+  { value: "content_marketing", label: "콘텐츠 마케팅" },
+  { value: "sns_content", label: "SNS 콘텐츠 제작" },
   { value: "undecided", label: "미정" },
 ] as const;
 
@@ -348,21 +296,23 @@ export default function CareerGuidance() {
   >([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [guidancePath, setGuidancePath] = useState<string | null>(null);
+  const [guidanceDocs, setGuidanceDocs] = useState<{ name: string; url: string }[]>([]);
+  const [newDocName, setNewDocName] = useState("");
+  const [newDocUrl, setNewDocUrl] = useState("");
+  const [guidanceUrl, setGuidanceUrl] = useState<string | null>(null);
   const [guidanceContent, setGuidanceContent] = useState("");
   const [guidanceLoading, setGuidanceLoading] = useState(false);
 
   useEffect(() => {
-    if (!guidancePath) return;
+    if (!guidanceUrl) return;
     setGuidanceLoading(true);
     setGuidanceContent("");
-    const encoded = guidancePath.split("/").map(encodeURIComponent).join("/");
-    fetch(`${RAW_BASE}/${encoded}`)
+    fetch(guidanceUrl)
       .then((r) => { if (!r.ok) throw new Error("파일 없음"); return r.text(); })
       .then(setGuidanceContent)
-      .catch(() => setGuidanceContent("파일을 불러올 수 없습니다."))
+      .catch(() => setGuidanceContent("파일을 불러올 수 없습니다. (비공개 저장소이거나 링크가 잘못되었을 수 있어요)"))
       .finally(() => setGuidanceLoading(false));
-  }, [guidancePath]);
+  }, [guidanceUrl]);
 
   const { data: guidance, refetch: refetchGuidance } = trpc.guidance.getCareerGuidance.useQuery(
     { studentUserId: selectedStudent?.id ?? 0 },
@@ -387,6 +337,8 @@ export default function CareerGuidance() {
     setSelectedStudent(student);
     setCareerTrack("undecided");
     setGuidanceNote("");
+    setGuidanceDocs([]);
+    setGuidanceUrl(null);
     setChecklist(DEFAULT_CHECKLIST);
     setAiRecommendations([]);
   };
@@ -396,6 +348,7 @@ export default function CareerGuidance() {
     if (!selectedStudent || !guidance) return;
     setCareerTrack((guidance.careerTrack as CareerTrack) ?? "undecided");
     setGuidanceNote(guidance.guidanceNote ?? "");
+    setGuidanceDocs((guidance.guidanceDocs as typeof guidanceDocs) ?? []);
     setChecklist((guidance.checklist as typeof DEFAULT_CHECKLIST) ?? DEFAULT_CHECKLIST);
     setAiRecommendations((guidance.recommendedCompanies as typeof aiRecommendations) ?? []);
   }, [selectedStudent?.id, guidance]);
@@ -405,9 +358,22 @@ export default function CareerGuidance() {
     if (guidance) {
       setCareerTrack((guidance.careerTrack as CareerTrack) ?? "undecided");
       setGuidanceNote(guidance.guidanceNote ?? "");
+      setGuidanceDocs((guidance.guidanceDocs as typeof guidanceDocs) ?? []);
       setChecklist((guidance.checklist as typeof DEFAULT_CHECKLIST) ?? DEFAULT_CHECKLIST);
       setAiRecommendations((guidance.recommendedCompanies as typeof aiRecommendations) ?? []);
     }
+  };
+
+  const handleAddGuidanceDoc = () => {
+    if (!newDocName.trim() || !newDocUrl.trim()) return;
+    setGuidanceDocs((prev) => [...prev, { name: newDocName.trim(), url: newDocUrl.trim() }]);
+    setNewDocName("");
+    setNewDocUrl("");
+  };
+
+  const handleRemoveGuidanceDoc = (idx: number) => {
+    setGuidanceDocs((prev) => prev.filter((_, i) => i !== idx));
+    setGuidanceUrl(null);
   };
 
   const handleSave = () => {
@@ -416,6 +382,7 @@ export default function CareerGuidance() {
       studentUserId: selectedStudent.id,
       careerTrack,
       guidanceNote,
+      guidanceDocs,
       checklist,
       recommendedCompanies: aiRecommendations,
     });
@@ -607,12 +574,6 @@ export default function CareerGuidance() {
                       <User className="w-4 h-4" /> {selectedStudent.name} 진로지도 카드
                     </CardTitle>
                     <div className="flex gap-2 flex-wrap">
-                      <a href={WORKFLOW_URL} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm" className="gap-1">
-                          <ListChecks className="w-4 h-4" /> 워크플로우 가이드
-                          <ExternalLink className="w-3 h-3" />
-                        </Button>
-                      </a>
                       <Button variant="outline" size="sm" onClick={() => setDocsOpen(true)}>
                         <FileText className="w-4 h-4 mr-1" /> 서류 수정
                       </Button>
@@ -708,65 +669,100 @@ export default function CareerGuidance() {
                       </div>
                     </TabsContent>
 
-                    {/* 진로지도 자료 탭 */}
-                    <TabsContent value="docs" className="mt-4">
-                      {(() => {
-                        const files = STUDENT_GUIDANCE_FILES[selectedStudent.name] ?? [];
-                        return files.length === 0 ? (
-                          <div className="text-center py-10 text-muted-foreground text-sm">
-                            <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                            <p>등록된 진로지도 자료가 없습니다.</p>
-                          </div>
-                        ) : (
-                          <div className="flex gap-3 h-[340px]">
-                            {/* 파일 목록 */}
-                            <div className="w-40 flex-shrink-0 space-y-1 overflow-y-auto">
-                              {files.map((f) => (
+                    {/* 진로지도 자료 탭 — DB(career_guidance.guidanceDocs)에 학생별로 등록/관리 */}
+                    <TabsContent value="docs" className="mt-4 space-y-3">
+                      {/* 새 문서 등록 */}
+                      <div className="flex gap-2 items-end p-3 border rounded-lg bg-muted/20">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-xs">문서 이름</Label>
+                          <Input
+                            value={newDocName}
+                            onChange={(e) => setNewDocName(e.target.value)}
+                            placeholder="예: 진로지도, 포트폴리오가이드"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div className="flex-[2] space-y-1">
+                          <Label className="text-xs">문서 URL</Label>
+                          <Input
+                            value={newDocUrl}
+                            onChange={(e) => setNewDocUrl(e.target.value)}
+                            placeholder="https://raw.githubusercontent.com/... 또는 md/html 링크"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <Button size="sm" variant="outline" onClick={handleAddGuidanceDoc} className="gap-1">
+                          <Plus className="w-3.5 h-3.5" /> 추가
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground px-1">
+                        여기서 추가한 문서는 저장 버튼을 눌러야 DB에 반영됩니다. 실명을 코드에 남기지 않기 위해
+                        학생별 자료 목록은 소스코드가 아닌 이 화면에서만 등록·관리합니다.
+                      </p>
+
+                      {guidanceDocs.length === 0 ? (
+                        <div className="text-center py-10 text-muted-foreground text-sm">
+                          <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                          <p>등록된 진로지도 자료가 없습니다.</p>
+                        </div>
+                      ) : (
+                        <div className="flex gap-3 h-[300px]">
+                          {/* 파일 목록 */}
+                          <div className="w-48 flex-shrink-0 space-y-1 overflow-y-auto">
+                            {guidanceDocs.map((f, idx) => (
+                              <div
+                                key={`${f.url}-${idx}`}
+                                className={`w-full flex items-center gap-1 rounded-lg text-xs ${
+                                  guidanceUrl === f.url ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground"
+                                }`}
+                              >
                                 <button
-                                  key={f.path}
-                                  onClick={() => setGuidancePath(f.path)}
-                                  className={`w-full text-left px-3 py-2 rounded-lg text-xs flex items-center gap-2 ${
-                                    guidancePath === f.path
-                                      ? "bg-primary/10 text-primary font-semibold"
-                                      : "hover:bg-muted text-muted-foreground"
-                                  }`}
+                                  onClick={() => setGuidanceUrl(f.url)}
+                                  className="flex-1 text-left px-3 py-2 flex items-center gap-2 hover:bg-muted rounded-lg"
                                 >
                                   <FileText size={12} className="flex-shrink-0" />
                                   {f.name}
                                 </button>
-                              ))}
-                            </div>
-                            {/* 내용 뷰어 */}
-                            <div className="flex-1 border rounded-lg overflow-y-auto p-4 bg-muted/30">
-                              {!guidancePath && (
-                                <p className="text-xs text-muted-foreground text-center mt-10">좌측에서 파일을 선택하세요.</p>
-                              )}
-                              {guidanceLoading && (
-                                <div className="flex items-center justify-center mt-10">
-                                  <Loader2 size={20} className="animate-spin text-primary" />
-                                </div>
-                              )}
-                              {!guidanceLoading && guidanceContent && (
-                                <>
-                                  <div className="flex justify-end mb-2">
-                                    <a
-                                      href={`https://github.com/${REPO}/blob/main/${guidancePath}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
-                                    >
-                                      <ExternalLink size={11} /> GitHub에서 보기
-                                    </a>
-                                  </div>
-                                  <article className="prose prose-xs max-w-none prose-headings:text-gray-900 prose-a:text-blue-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded text-sm">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{guidanceContent}</ReactMarkdown>
-                                  </article>
-                                </>
-                              )}
-                            </div>
+                                <button
+                                  onClick={() => handleRemoveGuidanceDoc(idx)}
+                                  className="p-1.5 text-muted-foreground hover:text-destructive"
+                                  title="삭제"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            ))}
                           </div>
-                        );
-                      })()}
+                          {/* 내용 뷰어 */}
+                          <div className="flex-1 border rounded-lg overflow-y-auto p-4 bg-muted/30">
+                            {!guidanceUrl && (
+                              <p className="text-xs text-muted-foreground text-center mt-10">좌측에서 파일을 선택하세요.</p>
+                            )}
+                            {guidanceLoading && (
+                              <div className="flex items-center justify-center mt-10">
+                                <Loader2 size={20} className="animate-spin text-primary" />
+                              </div>
+                            )}
+                            {!guidanceLoading && guidanceContent && (
+                              <>
+                                <div className="flex justify-end mb-2">
+                                  <a
+                                    href={guidanceUrl ?? "#"}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                                  >
+                                    <ExternalLink size={11} /> 원본 링크 열기
+                                  </a>
+                                </div>
+                                <article className="prose prose-xs max-w-none prose-headings:text-gray-900 prose-a:text-blue-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:rounded text-sm">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{guidanceContent}</ReactMarkdown>
+                                </article>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </TabsContent>
 
                     {/* 진로 매칭 자료 탭 */}
