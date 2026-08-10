@@ -166,10 +166,11 @@ function getRailGroups(role: string): RailGroup[] {
           subItems: [{ label: "서류 등록 센터", href: "/student/documents" }],
         },
         {
-          key: "counseling", label: "상담", href: "/student/ai-agents",
-          primaryLabel: "AI 취업진로 에이전트",
+          key: "counseling", label: "상담", href: "/student/counseling",
+          primaryLabel: "상담 이력",
           icon: <MessageSquare size={ICON} strokeWidth={STROKE} />,
           subItems: [
+            { label: "AI 취업진로 에이전트", href: "/student/ai-agents" },
             { label: "AI 자기소개서", href: "/student/cover-letter" },
             { label: "AI 역량 분석", href: "/student/ai-analysis" },
           ],

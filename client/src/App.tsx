@@ -29,6 +29,7 @@ const StudentProfile = lazy(() => import("./pages/student/Profile"));
 const StudentDocumentCenter = lazy(() => import("./pages/student/DocumentCenter"));
 const StudentCareerProgress = lazy(() => import("./pages/student/CareerProgress"));
 const StudentAIAgents = lazy(() => import("./pages/student/AIAgents"));
+const StudentCounseling = lazy(() => import("./pages/student/Counseling"));
 
 // Professor pages
 const ProfessorDashboard = lazy(() => import("./pages/professor/Dashboard"));
@@ -173,6 +174,9 @@ function Router() {
       </Route>
       <Route path="/student/ai-agents">
         <RoleGuard allowedRoles={["student", "admin"]}><StudentAIAgents /></RoleGuard>
+      </Route>
+      <Route path="/student/counseling">
+        <RoleGuard allowedRoles={["student", "admin"]}><StudentCounseling /></RoleGuard>
       </Route>
 
       {/* Professor */}

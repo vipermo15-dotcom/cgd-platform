@@ -17,6 +17,10 @@ const SCORE_LABELS: Record<string, string> = {
 export default function ProfessorStudentDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: detail } = trpc.professor.getStudentDetail.useQuery({ userId: Number(id) });
+  const { data: counselingSessions = [] } = trpc.guidance.getCounselingSessions.useQuery(
+    { studentUserId: Number(id) },
+    { enabled: !!id }
+  );
 
   const radarData: { subject: string; score: number }[] = [];
 
@@ -56,6 +60,35 @@ export default function ProfessorStudentDetail() {
             </Card>
 
 
+
+            {/* Counseling sessions */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">상담 이력</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {counselingSessions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">아직 상담 기록이 없습니다.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {counselingSessions.map((s) => (
+                      <div key={s.id} className="p-3 bg-muted rounded-lg space-y-1">
+                        <div className="flex items-center justify-between flex-wrap gap-1">
+                          <p className="text-sm font-medium">{s.topic}</p>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(s.sessionDate), "yyyy.MM.dd", { locale: ko })} · {s.counselorName}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground/90">{s.note}</p>
+                        {s.followUpAction && (
+                          <Badge variant="secondary" className="text-xs font-normal">다음 목표 · {s.followUpAction}</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Feedbacks */}
             <Card>

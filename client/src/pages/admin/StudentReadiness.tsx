@@ -2,7 +2,8 @@ import { trpc } from "@/lib/trpc";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FileText, BookOpen, Briefcase, Map, TrendingUp, Users } from "lucide-react";
+import { Loader2, FileText, BookOpen, Briefcase, Map, TrendingUp, Users, AlertCircle, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 
 const STATUS_COLORS: Record<string, string> = {
   취업확정: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -60,6 +61,12 @@ export default function StudentReadiness() {
     시작전: data.filter((d) => d.scores.total < 40).length,
   };
 
+  // 주의가 필요한 교육생 — 반 평균보다 20점 이상 뒤처진 학생 (최대 5명)
+  const atRisk = [...data]
+    .filter((d) => avg - d.scores.total >= 20)
+    .sort((a, b) => a.scores.total - b.scores.total)
+    .slice(0, 5);
+
   return (
     <AppLayout title="진도 현황">
       <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
@@ -97,6 +104,36 @@ export default function StudentReadiness() {
             </CardContent>
           </Card>
         </div>
+
+        {/* 주의가 필요한 교육생 */}
+        {atRisk.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertCircle size={18} strokeWidth={1.75} className="text-destructive" />
+                주의가 필요한 교육생
+                <Badge variant="secondary" className="ml-1 font-normal">{atRisk.length}명</Badge>
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">반 평균({avg}점)보다 20점 이상 뒤처진 순으로 보여드려요.</p>
+            </CardHeader>
+            <CardContent className="space-y-1.5">
+              {atRisk.map((student) => (
+                <Link key={student.userId} href={`/professor/students/${student.userId}`}>
+                  <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors cursor-pointer">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs flex-shrink-0">
+                      {student.name[0]}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{student.name}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-destructive tabular-nums">{student.scores.total}점</span>
+                    <ArrowRight size={14} strokeWidth={1.75} className="text-muted-foreground shrink-0" />
+                  </div>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* 학생별 카드 */}
         {isLoading ? (

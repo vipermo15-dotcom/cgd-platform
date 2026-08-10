@@ -28,6 +28,11 @@ export default function StudentDashboard() {
     { studentUserId: user?.id ?? 0 },
     { enabled: !!user?.id }
   );
+  const { data: counselingSessions = [] } = trpc.guidance.getCounselingSessions.useQuery(
+    { studentUserId: user?.id ?? 0 },
+    { enabled: !!user?.id }
+  );
+  const latestSession = counselingSessions[0];
 
   const radarData = analysis?.scores
     ? Object.entries(analysis.scores as Record<string, number>).map(([key, val]) => ({
@@ -136,20 +141,42 @@ export default function StudentDashboard() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <MessageSquare size={18} strokeWidth={1.75} className="text-primary" />
-                상담
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MessageSquare size={18} strokeWidth={1.75} className="text-primary" />
+                  최근 상담
+                </CardTitle>
+                {counselingSessions.length > 0 && (
+                  <Link href="/student/counseling">
+                    <Button variant="ghost" size="sm" className="gap-1 text-xs">
+                      전체 보기 <ArrowRight size={14} strokeWidth={1.75} />
+                    </Button>
+                  </Link>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
-              {guidance?.guidanceNote ? (
-                <div className="space-y-3">
+              {latestSession ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <p className="text-sm font-medium text-foreground">{latestSession.topic}</p>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(latestSession.sessionDate).toLocaleDateString("ko-KR")} · {latestSession.counselorName}
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground/90 line-clamp-2">{latestSession.note}</p>
+                  <p className="text-xs text-muted-foreground">
+                    지금까지 {counselingSessions.length}번 상담했어요.
+                  </p>
+                </div>
+              ) : guidance?.guidanceNote ? (
+                <div className="space-y-2">
                   <p className="text-sm text-foreground">{guidance.guidanceNote}</p>
                   <p className="text-xs text-muted-foreground">학과장 코멘트</p>
                 </div>
               ) : (
-                <div className="h-32 flex flex-col items-center justify-center gap-3 text-muted-foreground text-center">
-                  <p className="text-sm">아직 등록된 상담 코멘트가 없어요</p>
+                <div className="h-24 flex flex-col items-center justify-center gap-2 text-muted-foreground text-center">
+                  <p className="text-sm">아직 등록된 상담 기록이 없어요</p>
                 </div>
               )}
               <Link href="/student/ai-agents">

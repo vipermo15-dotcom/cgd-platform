@@ -650,6 +650,24 @@ export const careerFeedbacks = mysqlTable("career_feedbacks", {
 export type CareerFeedback = typeof careerFeedbacks.$inferSelect;
 export type InsertCareerFeedback = typeof careerFeedbacks.$inferInsert;
 
+// ─── 상담 이력 ─────────────────────────────────────────────────────────────────
+// 학과장/교수가 학생과 진행한 진로·진도 상담을 세로 타임라인으로 기록
+export const counselingSessions = mysqlTable("counseling_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  studentUserId: int("studentUserId").notNull(),
+  counselorUserId: int("counselorUserId").notNull(),
+  sessionDate: timestamp("sessionDate").notNull(),
+  topic: varchar("topic", { length: 200 }).notNull(),
+  note: text("note").notNull(),
+  followUpAction: text("followUpAction"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  studentIdx: index("counseling_sessions_studentUserId_idx").on(t.studentUserId),
+}));
+export type CounselingSession = typeof counselingSessions.$inferSelect;
+export type InsertCounselingSession = typeof counselingSessions.$inferInsert;
+
 // ─── 구직활동 공유 권한 ────────────────────────────────────────────────────────
 // 교육생이 공동훈련센터에 구직활동(지원현황) 공유를 허용하는 권한 테이블
 export const jobActivityShares = mysqlTable("job_activity_shares", {

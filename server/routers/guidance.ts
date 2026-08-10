@@ -11,6 +11,7 @@ import {
   users,
   studentProfiles,
   jobApplications,
+  counselingSessions,
 } from "../../drizzle/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { invokeLLM } from "../_core/llm";
@@ -50,6 +51,63 @@ export const guidanceRouter = router({
         .orderBy(desc(careerGuidance.updatedAt))
         .limit(1);
       return guidance ?? null;
+    }),
+
+  // 상담 이력 조회 (학생 본인 / 학과장 / 교수 / 훈련센터 / 관리자)
+  getCounselingSessions: protectedProcedure
+    .input(z.object({ studentUserId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const isSelf = ctx.user.id === input.studentUserId;
+      const isStaff =
+        ctx.user.role === "admin" ||
+        ctx.user.role === "professor" ||
+        ctx.user.role === "training_center";
+      if (!isSelf && !isStaff)
+        throw new TRPCError({ code: "FORBIDDEN" });
+
+      return db
+        .select({
+          id: counselingSessions.id,
+          sessionDate: counselingSessions.sessionDate,
+          topic: counselingSessions.topic,
+          note: counselingSessions.note,
+          followUpAction: counselingSessions.followUpAction,
+          counselorName: users.name,
+        })
+        .from(counselingSessions)
+        .innerJoin(users, eq(users.id, counselingSessions.counselorUserId))
+        .where(eq(counselingSessions.studentUserId, input.studentUserId))
+        .orderBy(desc(counselingSessions.sessionDate));
+    }),
+
+  // 상담 이력 등록 (학과장 / 교수 / 관리자 — 훈련센터는 열람만 가능)
+  createCounselingSession: protectedProcedure
+    .input(
+      z.object({
+        studentUserId: z.number(),
+        sessionDate: z.string(),
+        topic: z.string().min(1).max(200),
+        note: z.string().min(1),
+        followUpAction: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const isStaff = ctx.user.role === "admin" || ctx.user.role === "professor";
+      if (!isStaff) throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      await db.insert(counselingSessions).values({
+        studentUserId: input.studentUserId,
+        counselorUserId: ctx.user.id,
+        sessionDate: new Date(input.sessionDate),
+        topic: input.topic,
+        note: input.note,
+        followUpAction: input.followUpAction || null,
+      });
+      return { success: true };
     }),
 
   // 진로지도 카드 저장 (학과장 / 관리자)

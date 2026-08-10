@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Search, Star, MessageSquare, Eye } from "lucide-react";
+import { Search, Star, MessageSquare, Eye, CalendarClock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -29,6 +30,11 @@ export default function ProfessorStudents() {
   const [feedbackStudent, setFeedbackStudent] = useState<any>(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackRating, setFeedbackRating] = useState(5);
+  const [counselingStudent, setCounselingStudent] = useState<any>(null);
+  const [sessionDate, setSessionDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [topic, setTopic] = useState("");
+  const [note, setNote] = useState("");
+  const [followUpAction, setFollowUpAction] = useState("");
 
   const { data: students = [] } = trpc.professor.getStudents.useQuery({
     search: search || undefined,
@@ -42,6 +48,18 @@ export default function ProfessorStudents() {
       setFeedbackText("");
       setFeedbackRating(5);
       toast.success("피드백이 작성되었습니다.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const addCounseling = trpc.guidance.createCounselingSession.useMutation({
+    onSuccess: () => {
+      utils.guidance.getCounselingSessions.invalidate();
+      setCounselingStudent(null);
+      setTopic("");
+      setNote("");
+      setFollowUpAction("");
+      toast.success("상담 이력이 등록되었습니다.");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -105,14 +123,27 @@ export default function ProfessorStudents() {
                         </Button>
                       </Link>
                       {!isReadOnly && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="gap-1"
-                          onClick={() => setFeedbackStudent(item)}
-                        >
-                          <MessageSquare size={14} /> 피드백
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1"
+                            onClick={() => setFeedbackStudent(item)}
+                          >
+                            <MessageSquare size={14} /> 피드백
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1"
+                            onClick={() => {
+                              setCounselingStudent(item);
+                              setSessionDate(new Date().toISOString().slice(0, 10));
+                            }}
+                          >
+                            <CalendarClock size={14} /> 상담 기록
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -156,6 +187,46 @@ export default function ProfessorStudents() {
                 disabled={!feedbackText || addFeedback.isPending}
               >
                 피드백 전송
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Counseling session dialog */}
+        <Dialog open={!!counselingStudent} onOpenChange={() => setCounselingStudent(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{counselingStudent?.user?.name}님 상담 기록</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>상담 일자 *</Label>
+                <Input type="date" value={sessionDate} onChange={e => setSessionDate(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>상담 주제 *</Label>
+                <Input value={topic} onChange={e => setTopic(e.target.value)} placeholder="예: 중간 진도 상담" className="mt-1" />
+              </div>
+              <div>
+                <Label>상담 내용 *</Label>
+                <Textarea value={note} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNote(e.target.value)} rows={4} placeholder="상담에서 나눈 내용을 기록해주세요." className="mt-1" />
+              </div>
+              <div>
+                <Label>다음 목표 (선택)</Label>
+                <Input value={followUpAction} onChange={e => setFollowUpAction(e.target.value)} placeholder="예: 8월 첫 주까지 2차 시안 3안" className="mt-1" />
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => counselingStudent && addCounseling.mutate({
+                  studentUserId: counselingStudent.user.id,
+                  sessionDate,
+                  topic,
+                  note,
+                  followUpAction: followUpAction || undefined,
+                })}
+                disabled={!topic || !note || addCounseling.isPending}
+              >
+                상담 기록 저장
               </Button>
             </div>
           </DialogContent>
