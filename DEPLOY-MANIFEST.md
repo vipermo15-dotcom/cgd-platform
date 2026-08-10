@@ -1,9 +1,14 @@
 # 배포 매니페스트 — 한 번에 배포 (크레딧 절약용)
 
-> 기준 커밋: **99e66a6** (origin/main 최신) · 갱신 2026-08-10
+> 기준 커밋: **0bf8cd6** (origin/main 최신) · 갱신 2026-08-11
 > 목적: Manus 크레딧을 아껴 **모든 미배포 변경을 1회 배포로 반영**. 아래 체크리스트로 누락 방지.
 
-## ⭐⭐⭐⭐⭐ 이번 배포 — 상담 이력 기능 + 진도현황 위젯 (코드 + DB 마이그레이션)
+## 🔴 이번 배포 — 크래시 버그 수정 (DB 마이그레이션 없음)
+- [ ] "취업률 현황"(`/admin/employment-stats`) 진입 시 흰 화면 크래시 수정 — AppLayout 누락이 원인
+- [ ] "업체 파이프라인"(`/admin/pipeline`), "서류 등록 센터"(`/student/documents`) 동일 원인 크래시 예방 수정
+- [ ] 취업 축하 배너 studentName null 방어 코드 추가
+
+## ⭐⭐⭐⭐⭐ 이전 배포 — 상담 이력 기능 + 진도현황 위젯 (코드 + DB 마이그레이션)
 - [ ] **상담 이력** — 학생 신규 페이지 `/student/counseling`에 세로 타임라인. 학과장/교수가 학생관리에서 "상담 기록" 버튼으로 날짜·주제·내용·다음목표 입력 → 학생 홈/상담 페이지·학생상세 화면에 실시간 반영
 - [ ] **주의가 필요한 교육생** 위젯 — 진도 현황(`/admin/student-readiness`) 화면에 반평균 대비 20점 이상 뒤처진 학생 최대 5명 표시
 - [ ] DB 마이그레이션 `0012_add_counseling_sessions.sql` — `counseling_sessions` 신규 테이블 (studentUserId, counselorUserId, sessionDate, topic, note, followUpAction)
@@ -19,7 +24,32 @@
 
 ---
 
-## 1) Manus에 보낼 프롬프트 (복붙) — 코드 배포 (상담 이력 기능)
+## 1) Manus에 보낼 프롬프트 (복붙) — 크래시 버그 수정
+
+```
+GitHub 저장소 vipermo15-dotcom/cgd-platform 의 main 브랜치 최신 코드(커밋 0bf8cd6)를
+가져와서 반영하고 빌드·배포해줘. DB 마이그레이션은 없어.
+
+[수정 내용]
+"취업률 현황" 화면(진도 현황 → 취업률 현황 탭)에 들어가면 흰 화면에 "An unexpected error
+occurred"가 뜨던 크래시를 고쳤어. 원인은 그 페이지가 공통 레이아웃(좌측 아이콘 레일) 없이
+렌더링되고 있었던 것. 같은 문제가 있던 "업체 파이프라인", "서류 등록 센터" 화면도 함께 고쳤어.
+
+[검증 완료 상태]
+- tsc --noEmit 0 errors
+- vitest run 36/36 통과
+- vite build 성공
+
+[빌드/배포]
+pnpm install → pnpm build → 배포. 배포 후 학과장 계정으로 "진도 현황 → 취업률 현황" 탭에
+들어가서 정상적으로 화면이 뜨는지, 좌측 레일도 같이 보이는지 확인해줘.
+```
+
+> Manus가 "저장소 접근 불가"라고 하면 → GitHub에서 저장소를 잠깐 **public** 전환 후 재시도, 끝나면 **private** 복귀. (참고: 2026-08-11 확인 결과 이 저장소는 이미 public 상태였습니다 — 접근 오류가 나면 visibility 문제가 아니라 마누스 쪽 GitHub 연동/세션 문제일 가능성이 높으니 재시도를 먼저 요청하세요.)
+
+---
+
+## 2) Manus에 보낼 프롬프트 (복붙) — 코드 배포 (상담 이력 기능)
 
 ```
 GitHub 저장소 vipermo15-dotcom/cgd-platform 의 main 브랜치 최신 코드(커밋 99e66a6)를
@@ -53,7 +83,7 @@ pnpm install → pnpm build → 배포. 배포 후 학과장 계정으로 교육
 
 ---
 
-## 2) Manus에 보낼 프롬프트 (복붙) — 학생 피드백 17건 입력
+## 3) Manus에 보낼 프롬프트 (복붙) — 학생 피드백 17건 입력
 
 ```
 https://cgdplatform-pm7dnqip.manus.space 에 학과장(admin/professor) 계정으로 로그인해서,
@@ -196,7 +226,7 @@ https://cgdplatform-pm7dnqip.manus.space 에 학과장(admin/professor) 계정�
 
 ---
 
-## 3) 참고
+## 4) 참고
 - 코드 검증 완료 상태(직전 배포 기준): `tsc` 0 errors · `vitest` 36/36 · `build` 성공 (커밋 6b994c5 기준)
 - 이번 피드백 입력 건은 DB에 직접 접근하는 방식이 아니라 **이미 배포된 UI 기능을 그대로 사용하는** 방식입니다. Manus가 화면 조작이 어렵다고 하면, 대신 학생의 `userId`를 조회해서 `feedbacks` 테이블(professorUserId, studentUserId, content, rating)에 직접 INSERT해도 동일합니다.
 - 별점은 원장님 판단 기준이 아니라 AI가 잠정 제안한 점수입니다. 실제 등록 전 학과장 본인 기준으로 조정 가능합니다.
