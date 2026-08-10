@@ -1,9 +1,15 @@
 # 배포 매니페스트 — 한 번에 배포 (크레딧 절약용)
 
-> 기준 커밋: **0bf8cd6** (origin/main 최신) · 갱신 2026-08-11
+> 기준 커밋: **611fee3** (origin/main 최신) · 갱신 2026-08-11
 > 목적: Manus 크레딧을 아껴 **모든 미배포 변경을 1회 배포로 반영**. 아래 체크리스트로 누락 방지.
 
-## 🔴 이번 배포 — 크래시 버그 수정 (DB 마이그레이션 없음)
+## ⭐⭐⭐⭐⭐⭐ 이번 배포 — 주간 체크인 자가진단 설문 (코드 + DB 마이그레이션)
+- [ ] 학생 "내 진도" 화면에 "이번 주 체크인" 카드 추가 — 자가진단 준비도(1~5)·이번 주 한 일·다음 주 목표 입력
+- [ ] 같은 주에 다시 제출하면 기존 기록을 덮어씀 (주당 1건)
+- [ ] **취업 준비율 자동 점수에는 영향 없음** — 학과장/교수 상담 참고용 데이터로만 학생상세 화면에 노출
+- [ ] DB 마이그레이션 `0013_add_weekly_checkins.sql` — `weekly_checkins` 신규 테이블
+
+## 🔴 이전 배포 — 크래시 버그 수정 (DB 마이그레이션 없음)
 - [ ] "취업률 현황"(`/admin/employment-stats`) 진입 시 흰 화면 크래시 수정 — AppLayout 누락이 원인
 - [ ] "업체 파이프라인"(`/admin/pipeline`), "서류 등록 센터"(`/student/documents`) 동일 원인 크래시 예방 수정
 - [ ] 취업 축하 배너 studentName null 방어 코드 추가
@@ -24,7 +30,41 @@
 
 ---
 
-## 1) Manus에 보낼 프롬프트 (복붙) — 크래시 버그 수정
+## 1) Manus에 보낼 프롬프트 (복붙) — 코드 배포 (주간 체크인 설문)
+
+```
+GitHub 저장소 vipermo15-dotcom/cgd-platform 의 main 브랜치 최신 코드(커밋 611fee3)를
+전부 가져와서 프로젝트에 반영하고, DB 마이그레이션 적용 후 빌드·배포해줘.
+
+[DB 마이그레이션]
+drizzle/ 폴더의 0013 마이그레이션을 적용해줘 (pnpm drizzle-kit migrate).
+- 0013: weekly_checkins 테이블 신설 (학생 주간 자가진단 — studentUserId, weekOf, selfReadiness, completedThisWeek, nextWeekGoal, note)
+※ 이전 마이그레이션(0007~0012)이 이미 적용돼 있으면 "already exists" 오류는 무시하고 0013만 적용되면 돼.
+
+[이번 배포 내용]
+학생이 매주 스스로 남기는 짧은 체크인 설문 기능을 추가했어.
+1. 학생 "내 진도" 화면(/student/career-progress)에 "이번 주 체크인" 카드 추가
+   — 준비도 1~5점 별점, 이번 주에 한 일(필수), 다음 주 목표(선택)를 입력
+2. 같은 주에 다시 제출하면 기존 기록을 덮어씀 (주당 1건만 유지)
+3. 이 설문 응답은 기존 "취업 준비율" 자동 점수 계산에는 전혀 영향을 주지 않음 —
+   학과장/교수가 학생상세 화면에서 상담 참고 자료로만 열람 가능
+
+[검증 완료 상태]
+- tsc --noEmit 0 errors
+- vitest run 36/36 통과
+- vite build 성공
+
+[빌드/배포]
+pnpm install → pnpm build → 배포. 배포 후 학생 계정으로 "내 진도" 화면에서 체크인을
+등록해보고, 학과장 계정으로 해당 학생의 상세 화면에서 "주간 체크인" 카드에 정상적으로
+보이는지 확인해줘.
+```
+
+> Manus가 "저장소 접근 불가"라고 하면 → GitHub에서 저장소를 잠깐 **public** 전환 후 재시도, 끝나면 **private** 복귀.
+
+---
+
+## 2) Manus에 보낼 프롬프트 (복붙) — 크래시 버그 수정
 
 ```
 GitHub 저장소 vipermo15-dotcom/cgd-platform 의 main 브랜치 최신 코드(커밋 0bf8cd6)를
@@ -49,7 +89,7 @@ pnpm install → pnpm build → 배포. 배포 후 학과장 계정으로 "진�
 
 ---
 
-## 2) Manus에 보낼 프롬프트 (복붙) — 코드 배포 (상담 이력 기능)
+## 3) Manus에 보낼 프롬프트 (복붙) — 코드 배포 (상담 이력 기능)
 
 ```
 GitHub 저장소 vipermo15-dotcom/cgd-platform 의 main 브랜치 최신 코드(커밋 99e66a6)를
@@ -83,7 +123,7 @@ pnpm install → pnpm build → 배포. 배포 후 학과장 계정으로 교육
 
 ---
 
-## 3) Manus에 보낼 프롬프트 (복붙) — 학생 피드백 17건 입력
+## 4) Manus에 보낼 프롬프트 (복붙) — 학생 피드백 17건 입력
 
 ```
 https://cgdplatform-pm7dnqip.manus.space 에 학과장(admin/professor) 계정으로 로그인해서,
@@ -226,7 +266,7 @@ https://cgdplatform-pm7dnqip.manus.space 에 학과장(admin/professor) 계정�
 
 ---
 
-## 4) 참고
+## 5) 참고
 - 코드 검증 완료 상태(직전 배포 기준): `tsc` 0 errors · `vitest` 36/36 · `build` 성공 (커밋 6b994c5 기준)
 - 이번 피드백 입력 건은 DB에 직접 접근하는 방식이 아니라 **이미 배포된 UI 기능을 그대로 사용하는** 방식입니다. Manus가 화면 조작이 어렵다고 하면, 대신 학생의 `userId`를 조회해서 `feedbacks` 테이블(professorUserId, studentUserId, content, rating)에 직접 INSERT해도 동일합니다.
 - 별점은 원장님 판단 기준이 아니라 AI가 잠정 제안한 점수입니다. 실제 등록 전 학과장 본인 기준으로 조정 가능합니다.
