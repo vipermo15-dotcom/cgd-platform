@@ -12,6 +12,7 @@ import {
   studentProfiles,
   jobApplications,
   counselingSessions,
+  weeklyCheckins,
 } from "../../drizzle/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 import { invokeLLM } from "../_core/llm";
@@ -107,6 +108,78 @@ export const guidanceRouter = router({
         note: input.note,
         followUpAction: input.followUpAction || null,
       });
+      return { success: true };
+    }),
+
+  // 주간 체크인 조회 (학생 본인 / 학과장 / 교수 / 훈련센터 / 관리자)
+  // 자동 계산되는 취업 준비율 점수와는 별개 — 상담 참고용 자가진단 기록
+  getWeeklyCheckins: protectedProcedure
+    .input(z.object({ studentUserId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const isSelf = ctx.user.id === input.studentUserId;
+      const isStaff =
+        ctx.user.role === "admin" ||
+        ctx.user.role === "professor" ||
+        ctx.user.role === "training_center";
+      if (!isSelf && !isStaff)
+        throw new TRPCError({ code: "FORBIDDEN" });
+
+      return db
+        .select()
+        .from(weeklyCheckins)
+        .where(eq(weeklyCheckins.studentUserId, input.studentUserId))
+        .orderBy(desc(weeklyCheckins.weekOf));
+    }),
+
+  // 주간 체크인 제출 (학생 본인만 — 같은 주에 다시 제출하면 덮어씀)
+  submitWeeklyCheckin: protectedProcedure
+    .input(
+      z.object({
+        weekOf: z.string(),
+        selfReadiness: z.number().min(1).max(5),
+        completedThisWeek: z.string().min(1),
+        nextWeekGoal: z.string().optional(),
+        note: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const weekOfDate = new Date(input.weekOf);
+
+      const [existing] = await db
+        .select({ id: weeklyCheckins.id })
+        .from(weeklyCheckins)
+        .where(
+          and(
+            eq(weeklyCheckins.studentUserId, ctx.user.id),
+            eq(weeklyCheckins.weekOf, weekOfDate)
+          )
+        )
+        .limit(1);
+
+      if (existing) {
+        await db
+          .update(weeklyCheckins)
+          .set({
+            selfReadiness: input.selfReadiness,
+            completedThisWeek: input.completedThisWeek,
+            nextWeekGoal: input.nextWeekGoal || null,
+            note: input.note || null,
+          })
+          .where(eq(weeklyCheckins.id, existing.id));
+      } else {
+        await db.insert(weeklyCheckins).values({
+          studentUserId: ctx.user.id,
+          weekOf: weekOfDate,
+          selfReadiness: input.selfReadiness,
+          completedThisWeek: input.completedThisWeek,
+          nextWeekGoal: input.nextWeekGoal || null,
+          note: input.note || null,
+        });
+      }
       return { success: true };
     }),
 

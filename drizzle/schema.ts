@@ -668,6 +668,25 @@ export const counselingSessions = mysqlTable("counseling_sessions", {
 export type CounselingSession = typeof counselingSessions.$inferSelect;
 export type InsertCounselingSession = typeof counselingSessions.$inferInsert;
 
+// ─── 주간 체크인 설문 ────────────────────────────────────────────────────────────
+// 학생이 스스로 남기는 주간 자가진단 — 취업 준비율 자동 점수와는 별개이며,
+// 학과장/교수의 상담 참고 자료로만 쓰인다.
+export const weeklyCheckins = mysqlTable("weekly_checkins", {
+  id: int("id").autoincrement().primaryKey(),
+  studentUserId: int("studentUserId").notNull(),
+  weekOf: timestamp("weekOf").notNull(), // 해당 주 월요일 날짜
+  selfReadiness: int("selfReadiness").notNull(), // 1~5 자가진단 준비도
+  completedThisWeek: text("completedThisWeek").notNull(),
+  nextWeekGoal: text("nextWeekGoal"),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  studentIdx: index("weekly_checkins_studentUserId_idx").on(t.studentUserId),
+}));
+export type WeeklyCheckin = typeof weeklyCheckins.$inferSelect;
+export type InsertWeeklyCheckin = typeof weeklyCheckins.$inferInsert;
+
 // ─── 구직활동 공유 권한 ────────────────────────────────────────────────────────
 // 교육생이 공동훈련센터에 구직활동(지원현황) 공유를 허용하는 권한 테이블
 export const jobActivityShares = mysqlTable("job_activity_shares", {

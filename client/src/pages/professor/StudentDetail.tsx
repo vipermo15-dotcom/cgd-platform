@@ -21,6 +21,10 @@ export default function ProfessorStudentDetail() {
     { studentUserId: Number(id) },
     { enabled: !!id }
   );
+  const { data: checkins = [] } = trpc.guidance.getWeeklyCheckins.useQuery(
+    { studentUserId: Number(id) },
+    { enabled: !!id }
+  );
 
   const radarData: { subject: string; score: number }[] = [];
 
@@ -82,6 +86,40 @@ export default function ProfessorStudentDetail() {
                         <p className="text-sm text-foreground/90">{s.note}</p>
                         {s.followUpAction && (
                           <Badge variant="secondary" className="text-xs font-normal">다음 목표 · {s.followUpAction}</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Weekly check-ins */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">주간 체크인</CardTitle>
+                <p className="text-xs text-muted-foreground">학생이 스스로 남긴 자가진단 — 점수에는 반영되지 않는 상담 참고 자료예요.</p>
+              </CardHeader>
+              <CardContent>
+                {checkins.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">아직 체크인 기록이 없습니다.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {checkins.map((c) => (
+                      <div key={c.id} className="p-3 bg-muted rounded-lg space-y-1">
+                        <div className="flex items-center justify-between flex-wrap gap-1">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((n) => (
+                              <Star key={n} size={12} className={n <= c.selfReadiness ? "fill-primary text-primary" : "text-muted-foreground"} />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(c.weekOf), "yyyy.MM.dd", { locale: ko })} 주
+                          </span>
+                        </div>
+                        <p className="text-sm">{c.completedThisWeek}</p>
+                        {c.nextWeekGoal && (
+                          <Badge variant="secondary" className="text-xs font-normal">다음 주 목표 · {c.nextWeekGoal}</Badge>
                         )}
                       </div>
                     ))}

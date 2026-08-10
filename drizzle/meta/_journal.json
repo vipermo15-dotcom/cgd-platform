@@ -92,6 +92,13 @@
       "when": 1786365113879,
       "tag": "0012_add_counseling_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1786381911714,
+      "tag": "0013_add_weekly_checkins",
+      "breakpoints": true
     }
   ]
 }

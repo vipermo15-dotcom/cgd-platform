@@ -8,7 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import {
@@ -25,6 +28,8 @@ import {
   FolderOpen,
   Link2,
   MessageSquare,
+  Star,
+  ClipboardCheck,
 } from "lucide-react";
 
 const WORKFLOW_URL =
@@ -39,6 +44,17 @@ const WORKFLOW_STEPS = [
   { num: 6, phase: "취업 활동", title: "지원서 제출 & 면접 준비", duration: "Week 7~12", color: "#dc2626", tasks: ["1개 이상 기업 지원 완료", "지원 현황 플랫폼 기록", "AI 면접 준비 1회 이상"] },
   { num: 7, phase: "사후 관리", title: "취업 확정 보고 & 사후 지도", duration: "취업 후", color: "#374151", tasks: ["플랫폼 취업 상태 '취업확정' 업데이트", "취업 기업명·직종 입력", "플랫폼 피드백 작성"] },
 ];
+
+// 이번 주 월요일(자정)을 ISO 문자열로 반환 — 주간 체크인의 주 식별 키
+function getMondayOfThisWeek(): string {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diff);
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString();
+}
 
 // 40주 진도 그리드의 4단계와 기존 7단계 워크플로우를 연결 (실제 주차 데이터가 없어 체크리스트 완료율로 근사)
 const STAGE_WORKFLOW_STEPS: Record<string, number[]> = {
@@ -213,6 +229,34 @@ export default function CareerProgress() {
     onError: () => toast.error("업데이트 실패"),
   });
 
+  const utils = trpc.useUtils();
+  const [checkinOpen, setCheckinOpen] = useState(false);
+  const [selfReadiness, setSelfReadiness] = useState(3);
+  const [completedThisWeek, setCompletedThisWeek] = useState("");
+  const [nextWeekGoal, setNextWeekGoal] = useState("");
+  const thisWeekMonday = getMondayOfThisWeek();
+
+  const { data: checkins = [] } = trpc.guidance.getWeeklyCheckins.useQuery(
+    { studentUserId: user?.id ?? 0 },
+    { enabled: !!user?.id }
+  );
+  const latestCheckin = checkins[0];
+  const hasCheckedInThisWeek = latestCheckin
+    ? new Date(latestCheckin.weekOf).toDateString() === new Date(thisWeekMonday).toDateString()
+    : false;
+
+  const submitCheckin = trpc.guidance.submitWeeklyCheckin.useMutation({
+    onSuccess: () => {
+      utils.guidance.getWeeklyCheckins.invalidate();
+      setCheckinOpen(false);
+      setCompletedThisWeek("");
+      setNextWeekGoal("");
+      setSelfReadiness(3);
+      toast.success("이번 주 체크인이 등록되었습니다.");
+    },
+    onError: () => toast.error("체크인 등록 실패"),
+  });
+
   const checklist: ChecklistItem[] = (guidance?.checklist as ChecklistItem[]) ?? [];
   const completedCount = checklist.filter((c) => c.done).length;
   const totalCount = checklist.length;
@@ -324,6 +368,88 @@ export default function CareerProgress() {
             )}
           </SheetContent>
         </Sheet>
+
+        {/* 주간 체크인 — 자가진단, 자동 점수와는 별개로 상담 참고용 */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardCheck size={18} strokeWidth={1.75} className="text-primary" />
+                이번 주 체크인
+              </CardTitle>
+              <Button size="sm" variant={hasCheckedInThisWeek ? "outline" : "default"} onClick={() => setCheckinOpen(true)}>
+                {hasCheckedInThisWeek ? "이번 주 체크인 수정" : "이번 주 체크인 하기"}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              점수에는 반영되지 않고, 학과장·교수님 상담 참고 자료로만 쓰여요.
+            </p>
+          </CardHeader>
+          {latestCheckin && (
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star key={n} size={14} className={n <= latestCheckin.selfReadiness ? "fill-primary text-primary" : "text-muted-foreground"} />
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(latestCheckin.weekOf).toLocaleDateString("ko-KR")} 주 기준
+                </span>
+              </div>
+              <p className="text-sm text-foreground/90">{latestCheckin.completedThisWeek}</p>
+              {latestCheckin.nextWeekGoal && (
+                <Badge variant="secondary" className="text-xs font-normal">다음 주 목표 · {latestCheckin.nextWeekGoal}</Badge>
+              )}
+            </CardContent>
+          )}
+        </Card>
+
+        <Dialog open={checkinOpen} onOpenChange={setCheckinOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>이번 주 체크인</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>이번 주 준비도는 어느 정도인가요?</Label>
+                <div className="flex items-center gap-1 mt-1.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} type="button" onClick={() => setSelfReadiness(n)}>
+                      <Star size={24} className={n <= selfReadiness ? "fill-primary text-primary" : "text-muted-foreground"} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label>이번 주에 한 일 *</Label>
+                <Textarea
+                  value={completedThisWeek}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCompletedThisWeek(e.target.value)}
+                  rows={4}
+                  placeholder="예: 포트폴리오 2개 프로젝트 업로드, 채용공고 3건 지원"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label>다음 주 목표 (선택)</Label>
+                <Input value={nextWeekGoal} onChange={(e) => setNextWeekGoal(e.target.value)} placeholder="예: 자기소개서 초안 완성" className="mt-1" />
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => submitCheckin.mutate({
+                  weekOf: thisWeekMonday,
+                  selfReadiness,
+                  completedThisWeek,
+                  nextWeekGoal: nextWeekGoal || undefined,
+                })}
+                disabled={!completedThisWeek || submitCheckin.isPending}
+              >
+                체크인 저장
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-5">
