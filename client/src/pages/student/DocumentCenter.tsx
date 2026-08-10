@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -599,7 +600,8 @@ export default function DocumentCenter() {
   const { user } = useAuth();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <AppLayout title="서류 등록 센터">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
       {/* 헤더 */}
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -638,6 +640,7 @@ export default function DocumentCenter() {
         <TabsContent value="coverletter" className="mt-4"><CoverLetterTab /></TabsContent>
         <TabsContent value="portfolio" className="mt-4"><PortfolioTab /></TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

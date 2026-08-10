@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,8 @@ export default function CompanyPipeline() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <AppLayout title="업체·파이프라인">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">업체 파이프라인</h1>
@@ -205,6 +207,7 @@ export default function CompanyPipeline() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AppLayout from "@/components/AppLayout";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +42,8 @@ export default function EmploymentStats() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <AppLayout title="취업률 현황">
+      <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">취업률 현황</h1>
@@ -118,7 +120,7 @@ export default function EmploymentStats() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {stages.map((stage, idx) => (
-              <div key={idx} className="text-center space-y-2">
+              <div key={idx} className="relative text-center space-y-2">
                 <div className={`w-16 h-16 rounded-full ${stage.color} flex items-center justify-center mx-auto text-white text-xl font-bold`}>
                   {stage.value}
                 </div>
@@ -196,8 +198,8 @@ export default function EmploymentStats() {
                   <div>
                     <p className="text-sm font-medium">
                       🎉 {banner.useInitial
-                        ? banner.studentName.charAt(0) + "○" + (banner.studentName.length > 2 ? banner.studentName.charAt(banner.studentName.length - 1) : "")
-                        : banner.studentName}님 → {banner.companyName} {banner.jobTitle} 취업!
+                        ? (banner.studentName ?? "").charAt(0) + "○" + ((banner.studentName?.length ?? 0) > 2 ? banner.studentName.charAt(banner.studentName.length - 1) : "")
+                        : banner.studentName ?? "익명"}님 → {banner.companyName} {banner.jobTitle} 취업!
                     </p>
                     {banner.message && <p className="text-xs text-muted-foreground mt-0.5">{banner.message}</p>}
                   </div>
@@ -263,6 +265,7 @@ export default function EmploymentStats() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
