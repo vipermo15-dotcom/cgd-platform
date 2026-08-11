@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
-import { ArrowLeft, Star, Bot } from "lucide-react";
+import { ArrowLeft, Star, Bot, Briefcase, Bookmark } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip } from "recharts";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -12,6 +12,14 @@ import { ko } from "date-fns/locale";
 const SCORE_LABELS: Record<string, string> = {
   branding: "브랜딩", sns: "SNS 콘텐츠", video: "영상편집",
   character: "캐릭터/일러스트", aiGeneration: "AI 생성", editing: "편집디자인",
+};
+
+const APP_STATUS_COLORS: Record<string, string> = {
+  "지원완료": "bg-blue-100 text-blue-700",
+  "서류합격": "bg-green-100 text-green-700",
+  "면접": "bg-yellow-100 text-yellow-700",
+  "최종합격": "bg-emerald-100 text-emerald-700",
+  "탈락": "bg-red-100 text-red-700",
 };
 
 export default function ProfessorStudentDetail() {
@@ -25,6 +33,12 @@ export default function ProfessorStudentDetail() {
     { studentUserId: Number(id) },
     { enabled: !!id }
   );
+  const { data: jobActivity } = trpc.jobs.getStudentJobActivity.useQuery(
+    { studentUserId: Number(id) },
+    { enabled: !!id }
+  );
+  const applications = jobActivity?.applications ?? [];
+  const jobBookmarks = jobActivity?.bookmarks ?? [];
 
   const radarData: { subject: string; score: number }[] = [];
 
@@ -63,7 +77,54 @@ export default function ProfessorStudentDetail() {
               </CardContent>
             </Card>
 
-
+            {/* 지원 희망(북마크) · 진행 현황(지원 내역) — 멘토링 참고용 */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Briefcase size={18} className="text-primary" />
+                  지원 희망·진행 현황
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">학생이 관심 등록·지원한 채용공고예요. 상담 전에 참고하세요.</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">지원 현황 ({applications.length}건)</p>
+                  {applications.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">아직 지원한 공고가 없습니다.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {applications.map((a) => (
+                        <div key={a.application.id} className="flex items-center justify-between gap-2 p-2.5 bg-muted rounded-lg">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{a.posting.title}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {a.company?.companyName ?? "기업명 없음"} · {format(new Date(a.application.createdAt), "yyyy.MM.dd", { locale: ko })}
+                            </p>
+                          </div>
+                          <Badge className={`text-xs shrink-0 ${APP_STATUS_COLORS[a.application.status] ?? ""}`}>{a.application.status}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                    <Bookmark size={12} /> 관심 등록 ({jobBookmarks.length}건)
+                  </p>
+                  {jobBookmarks.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">관심 등록한 공고가 없습니다.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {jobBookmarks.map((b) => (
+                        <span key={b.bookmark.id} className="text-xs bg-secondary text-secondary-foreground px-2.5 py-1 rounded-full">
+                          {b.posting.title}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Counseling sessions */}
             <Card>

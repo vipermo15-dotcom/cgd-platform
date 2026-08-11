@@ -232,6 +232,24 @@ export const jobsRouter = router({
     return getUserBookmarks(ctx.user.id);
   }),
 
+  // 특정 학생의 지원 희망(북마크)·진행 현황(지원 내역) — 학과장/교수 멘토링 참고용
+  getStudentJobActivity: protectedProcedure
+    .input(z.object({ studentUserId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const isSelf = ctx.user.id === input.studentUserId;
+      const isStaff =
+        ctx.user.role === "admin" ||
+        ctx.user.role === "professor" ||
+        ctx.user.role === "training_center";
+      if (!isSelf && !isStaff) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const [applications, bookmarks] = await Promise.all([
+        getUserApplications(input.studentUserId),
+        getUserBookmarks(input.studentUserId),
+      ]);
+      return { applications, bookmarks };
+    }),
+
   // AI 맞춤 채용공고 추천 (역량 점수 + 분야 결합)
   aiRecommend: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
