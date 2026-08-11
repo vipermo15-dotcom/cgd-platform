@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
+import { VitePWA } from "vite-plugin-pwa";
 
 // =============================================================================
 // Manus Debug Collector - Vite Plugin
@@ -150,7 +151,52 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+  VitePWA({
+    registerType: "autoUpdate",
+    includeAssets: ["favicon-32.png", "apple-touch-icon.png"],
+    manifest: {
+      id: "/",
+      name: "CGD 취업지원 플랫폼",
+      short_name: "CGD 취업지원",
+      description: "서울시기술교육원 컴퓨터그래픽디자인과 진도지도·취업지원 플랫폼",
+      lang: "ko",
+      theme_color: "#ff385c",
+      background_color: "#ffffff",
+      display: "standalone",
+      orientation: "portrait",
+      start_url: "/",
+      scope: "/",
+      icons: [
+        { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: "/maskable-icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ],
+    },
+    workbox: {
+      // 앱 셸(HTML/CSS)만 선(先)캐싱하고, JS 청크는 실제로 방문할 때 캐싱한다(런타임 캐싱)
+      // — 언어 하이라이터 등 무거운 지연 로드 청크가 많아 초기 설치 용량을 가볍게 유지.
+      globPatterns: ["**/*.{html,css}"],
+      navigateFallback: "/index.html",
+      runtimeCaching: [
+        {
+          urlPattern: ({ request }) => request.destination === "script" || request.destination === "style",
+          handler: "StaleWhileRevalidate",
+          options: { cacheName: "app-assets" },
+        },
+        {
+          urlPattern: ({ url }) => url.pathname.startsWith("/trpc"),
+          handler: "NetworkOnly",
+        },
+      ],
+    },
+  }),
+];
 
 export default defineConfig({
   plugins,

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   BookOpen, Download, FileText,
-  GraduationCap, Shield, Loader2, CheckCircle2, Building2, Eye
+  GraduationCap, Shield, Loader2, CheckCircle2, Building2, Eye, Smartphone, Share, PlusSquare, MoreVertical
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -262,6 +262,39 @@ export default function ManualDownloadPage() {
             </p>
           </div>
         </div>
+
+        {/* 홈 화면에 앱으로 추가하기 (PWA 설치 안내) */}
+        <Card className="border-0 bg-pink-50 border border-pink-100">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3 mb-3">
+              <Smartphone size={17} className="text-[#ff385c] flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-slate-800">휴대폰 홈 화면에 앱으로 추가하기</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  한 번만 추가해두면 앱스토어 설치 없이 아이콘을 눌러 바로 접속할 수 있어요.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-white rounded-lg p-3 border border-pink-100">
+                <p className="text-xs font-semibold text-slate-700 mb-1.5">아이폰(Safari)</p>
+                <ol className="text-xs text-slate-500 space-y-1 leading-relaxed list-decimal list-inside">
+                  <li>Safari로 이 사이트를 엽니다</li>
+                  <li>하단 공유 버튼 <Share size={11} className="inline -mt-0.5" /> 을 눌러요</li>
+                  <li>"홈 화면에 추가" <PlusSquare size={11} className="inline -mt-0.5" /> 선택</li>
+                </ol>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-pink-100">
+                <p className="text-xs font-semibold text-slate-700 mb-1.5">안드로이드(Chrome)</p>
+                <ol className="text-xs text-slate-500 space-y-1 leading-relaxed list-decimal list-inside">
+                  <li>Chrome으로 이 사이트를 엽니다</li>
+                  <li>오른쪽 위 메뉴 <MoreVertical size={11} className="inline -mt-0.5" /> 를 눌러요</li>
+                  <li>"홈 화면에 추가" 또는 "앱 설치" 선택</li>
+                </ol>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Separator />
 
