@@ -30,6 +30,12 @@ import {
   MessageSquare,
   Star,
   ClipboardCheck,
+  ArrowRight,
+  Compass,
+  MapPin,
+  Palette,
+  Route,
+  WandSparkles,
 } from "lucide-react";
 
 const WORKFLOW_URL =
@@ -73,6 +79,54 @@ const CAREER_TRACK_LABELS: Record<string, string> = {
   ai_generation: "AI 생성",
   freelancer: "프리랜서",
   undecided: "미정",
+};
+
+const CAREER_TRACK_META: Record<
+  string,
+  { label: string; focus: string; nextAction: string; icon: typeof Palette }
+> = {
+  brand_design: {
+    label: "브랜드 디자인",
+    focus: "로고·패키지·캠페인으로 브랜드 경험을 설계하는 경로",
+    nextAction: "브랜드 시스템 프로토타입 1개 완성하기",
+    icon: Palette,
+  },
+  sns_marketing: {
+    label: "SNS 마케팅",
+    focus: "채널별 콘텐츠 전략과 시각 자산을 연결하는 경로",
+    nextAction: "타깃별 콘텐츠 기획안 3개 만들기",
+    icon: Route,
+  },
+  video_editing: {
+    label: "영상 편집",
+    focus: "스토리보드부터 편집 리듬까지 영상 경험을 만드는 경로",
+    nextAction: "대표 영상의 30초 하이라이트 편집하기",
+    icon: WandSparkles,
+  },
+  character_goods: {
+    label: "캐릭터 굿즈",
+    focus: "캐릭터 세계관을 제품과 팬 경험으로 번역하는 경로",
+    nextAction: "캐릭터 굿즈 목업 2종 정리하기",
+    icon: Palette,
+  },
+  ai_generation: {
+    label: "AI 생성",
+    focus: "생성형 도구와 후보정 역량을 조합하는 경로",
+    nextAction: "프롬프트 실험 결과 1세트 기록하기",
+    icon: WandSparkles,
+  },
+  freelancer: {
+    label: "프리랜서",
+    focus: "클라이언트 요구를 디자인 결과물로 전환하는 경로",
+    nextAction: "서비스 소개용 포트폴리오 썸네일 만들기",
+    icon: Route,
+  },
+  undecided: {
+    label: "탐색 중",
+    focus: "서로 다른 작업 경험을 기록하며 우선순위를 발견하는 단계",
+    nextAction: "관심 분야 3개를 비교해 기록하기",
+    icon: Compass,
+  },
 };
 
 const FREELANCER_PLATFORMS = [
@@ -263,6 +317,10 @@ export default function CareerProgress() {
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const careerTrack = guidance?.careerTrack ?? "undecided";
+  const trackMeta = CAREER_TRACK_META[careerTrack] ?? CAREER_TRACK_META.undecided;
+  const TrackIcon = trackMeta.icon;
+  const recommendedCompanies = (guidance?.recommendedCompanies as { companyName: string; jobTitle: string; reason: string; matchScore: number }[]) ?? [];
+  const primaryRecommendation = recommendedCompanies[0];
   const doneCount = Math.round((progressPct / 100) * TOTAL_WEEKS);
   const currentStage = getStageOfWeek(Math.min(doneCount + 1, TOTAL_WEEKS));
 
@@ -282,6 +340,73 @@ export default function CareerProgress() {
   return (
     <AppLayout title="내 진도">
       <div className="max-w-[1180px] mx-auto px-4 md:px-8 py-6 space-y-6">
+        {/* CGD 진로지도: 학생의 실제 트랙·진도·AI 매칭을 다음 행동으로 연결하는 지도형 개요 */}
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-[#fffaf3] via-background to-[#e7f0e9] shadow-sm">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full border border-dashed border-[#df6c4f]/35" />
+          <div className="pointer-events-none absolute -right-10 -top-10 h-52 w-52 rounded-full border border-[#163247]/10" />
+          <div className="pointer-events-none absolute bottom-7 left-[33%] h-px w-[48%] border-t border-dashed border-[#df6c4f]/50" />
+          <div className="relative p-5 md:p-7">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.14em] text-[#a65440]">CGD CAREER MAP / 현재 좌표</p>
+                <h2 className="mt-2 text-2xl md:text-3xl font-semibold tracking-tight text-foreground">
+                  {user?.name ?? "학생"}님의 <span className="text-[#df6c4f]">디자인 진로 지도</span>
+                </h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+                  포트폴리오, 진도, AI 매칭 결과를 한 흐름으로 읽고 오늘의 작업을 다음 좌표에 표시하세요.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 border border-[#df6c4f]/30 bg-[#fffaf5] px-3 py-2 text-xs font-semibold text-[#a65440] shadow-sm">
+                <MapPin size={15} className="fill-[#df6c4f] text-[#df6c4f]" />
+                현재 경로 · {trackMeta.label}
+              </div>
+            </div>
+
+            <div className="relative mt-7 grid gap-3 md:grid-cols-3">
+              <div className="relative border border-[#df6c4f]/30 bg-card/90 p-4 shadow-sm">
+                <span className="absolute -top-2 left-3 bg-[#df6c4f] px-2 py-0.5 text-[10px] font-bold tracking-wider text-white">NOW</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold tracking-wide text-muted-foreground">나의 진로 트랙</p>
+                    <p className="mt-1 text-base font-bold text-foreground">{trackMeta.label}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{trackMeta.focus}</p>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-[#df6c4f] text-white"><TrackIcon size={18} /></div>
+                </div>
+              </div>
+
+              <div className="relative border border-[#39725a]/25 bg-card/90 p-4 shadow-sm">
+                <span className="absolute -top-2 left-3 bg-[#39725a] px-2 py-0.5 text-[10px] font-bold tracking-wider text-white">GROWTH</span>
+                <p className="text-[11px] font-semibold tracking-wide text-muted-foreground">이번 주 누적 진도</p>
+                <div className="mt-1 flex items-end gap-2">
+                  <p className="text-3xl font-bold tabular-nums text-foreground">{progressPct}<span className="text-sm">%</span></p>
+                  <p className="mb-1 text-xs text-muted-foreground">{completedCount}/{totalCount || 0} 항목 완료</p>
+                </div>
+                <div className="mt-3 h-1.5 overflow-hidden bg-muted"><div className="h-full bg-[#39725a] transition-all" style={{ width: String(progressPct) + "%" }} /></div>
+              </div>
+
+              <Link href={primaryRecommendation ? "/student/job-matching" : "/student/portfolio"} className="group relative border border-[#163247]/20 bg-[#163247] p-4 text-white shadow-sm transition-transform hover:-translate-y-0.5">
+                <span className="absolute -top-2 left-3 bg-[#163247] px-2 py-0.5 text-[10px] font-bold tracking-wider text-white ring-1 ring-white/25">NEXT PIN</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold tracking-wide text-slate-300">다음 실행</p>
+                    <p className="mt-1 text-sm font-semibold leading-5">{primaryRecommendation ? primaryRecommendation.companyName + " 매칭 정보 확인" : trackMeta.nextAction}</p>
+                    <p className="mt-1 text-xs text-slate-300">{primaryRecommendation ? "적합도 " + primaryRecommendation.matchScore + "% · " + primaryRecommendation.jobTitle : "포트폴리오에 한 작업을 더 표시해 보세요"}</p>
+                  </div>
+                  <ArrowRight size={18} className="mt-1 shrink-0 text-[#f7c5ad] transition-transform group-hover:translate-x-1" />
+                </div>
+              </Link>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-dashed border-border pt-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-[#df6c4f]" />현재 선택 · 다음 행동</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-[#39725a]" />완료한 진도 · 성장 기록</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 bg-[#163247]" />구조 · 취업 연결</span>
+              <span className="ml-auto font-medium text-foreground">{hasCheckedInThisWeek ? "이번 주 체크인 완료" : "이번 주 체크인이 기다리고 있어요"}</span>
+            </div>
+          </div>
+        </section>
+
         {/* 헤더 카드 */}
         <Card>
           <CardContent className="p-5 space-y-4">
