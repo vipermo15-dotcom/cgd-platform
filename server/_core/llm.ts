@@ -212,13 +212,22 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
+// 마누스 Forge는 OpenAI 호환 형식이었기 때문에, 이 파일의 요청/응답 형식을 그대로 두고
+// 엔드포인트만 OpenAI 정식 API로 바꾼다. OPENAI_API_KEY가 있으면 그쪽을 우선 사용하고,
+// 없으면(이전 완료 전 과도기) 기존 마누스 Forge로 폴백한다.
+const useDirectOpenAI = () => !!ENV.openaiApiKey;
+
 const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
+  useDirectOpenAI()
+    ? "https://api.openai.com/v1/chat/completions"
+    : ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
+      ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
+      : "https://forge.manus.im/v1/chat/completions";
+
+const resolveApiKey = () => (useDirectOpenAI() ? ENV.openaiApiKey : ENV.forgeApiKey);
 
 const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
+  if (!resolveApiKey()) {
     throw new Error("OPENAI_API_KEY is not configured");
   }
 };
@@ -362,8 +371,13 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     messages: messages.map(normalizeMessage),
   };
 
+  // 기존 20여 개 호출부는 모두 model을 지정하지 않고 서버 기본값에 의존한다.
+  // 마누스 Forge는 자체 기본 모델이 있었지만 OpenAI 정식 API는 model이 필수라
+  // 직접 연동 시에는 OPENAI_MODEL(기본 gpt-4o)로 채워준다.
   if (model) {
     payload.model = model;
+  } else if (useDirectOpenAI()) {
+    payload.model = ENV.openaiModel;
   }
 
   if (tools && tools.length > 0) {
@@ -405,7 +419,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${resolveApiKey()}`,
     },
     body: JSON.stringify(payload),
   });
@@ -435,12 +449,14 @@ export type ModelsResponse = {
 export async function listLLMModels(): Promise<ModelsResponse> {
   assertApiKey();
 
-  const url = ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/models`
-    : "https://forge.manus.im/v1/models";
+  const url = useDirectOpenAI()
+    ? "https://api.openai.com/v1/models"
+    : ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
+      ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/models`
+      : "https://forge.manus.im/v1/models";
 
   const response = await fetchWithBackoff(url, {
-    headers: { authorization: `Bearer ${ENV.forgeApiKey}` },
+    headers: { authorization: `Bearer ${resolveApiKey()}` },
   });
 
   if (!response.ok) {

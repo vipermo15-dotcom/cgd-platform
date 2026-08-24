@@ -24,16 +24,34 @@ export type SessionPayload = {
   name: string;
 };
 
-const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
-const GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
-const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfoWithJwt`;
+// 구글 OAuth2 직접 연동 — 마누스 OAuth 중계 서버(webdev.v1.WebDevAuthPublicService) 제거.
+// ExchangeTokenResponse/GetUserInfoResponse 타입은 그대로 유지해 oauth.ts 등
+// 호출부를 바꾸지 않아도 되게 했다.
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
+
+type GoogleTokenResponse = {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  refresh_token?: string;
+  scope: string;
+  id_token: string;
+};
+
+type GoogleUserInfo = {
+  sub: string;
+  name?: string;
+  email?: string;
+  email_verified?: boolean;
+  picture?: string;
+};
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
+    if (!ENV.googleClientId || !ENV.googleClientSecret) {
       console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
+        "[OAuth] ERROR: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET is not configured!"
       );
     }
   }
@@ -47,38 +65,48 @@ class OAuthService {
     code: string,
     state: string
   ): Promise<ExchangeTokenResponse> {
-    const payload: ExchangeTokenRequest = {
-      clientId: ENV.appId,
-      grantType: "authorization_code",
-      code,
-      redirectUri: this.decodeState(state),
-    };
-
-    const { data } = await this.client.post<ExchangeTokenResponse>(
-      EXCHANGE_TOKEN_PATH,
-      payload
+    const { data } = await this.client.post<GoogleTokenResponse>(
+      GOOGLE_TOKEN_URL,
+      new URLSearchParams({
+        client_id: ENV.googleClientId,
+        client_secret: ENV.googleClientSecret,
+        code,
+        redirect_uri: this.decodeState(state),
+        grant_type: "authorization_code",
+      }),
+      { headers: { "content-type": "application/x-www-form-urlencoded" } }
     );
 
-    return data;
+    return {
+      accessToken: data.access_token,
+      tokenType: data.token_type,
+      expiresIn: data.expires_in,
+      refreshToken: data.refresh_token,
+      scope: data.scope,
+      idToken: data.id_token,
+    };
   }
 
   async getUserInfoByToken(
     token: ExchangeTokenResponse
   ): Promise<GetUserInfoResponse> {
-    const { data } = await this.client.post<GetUserInfoResponse>(
-      GET_USER_INFO_PATH,
-      {
-        accessToken: token.accessToken,
-      }
-    );
+    const { data } = await this.client.get<GoogleUserInfo>(GOOGLE_USERINFO_URL, {
+      headers: { authorization: `Bearer ${token.accessToken}` },
+    });
 
-    return data;
+    return {
+      openId: data.sub,
+      projectId: ENV.appId,
+      name: data.name ?? "",
+      email: data.email ?? null,
+      platform: "google",
+      loginMethod: "google",
+    };
   }
 }
 
 const createOAuthHttpClient = (): AxiosInstance =>
   axios.create({
-    baseURL: ENV.oAuthServerUrl,
     timeout: AXIOS_TIMEOUT_MS,
   });
 
@@ -232,28 +260,15 @@ class SDKServer {
     }
   }
 
+  // 마누스 플랫폼의 "예약 작업(cron)" 세션 검증 전용 — 마누스 종속 기능이라
+  // 이전 후에는 동작하지 않는다. 예약 작업이 필요하면 Railway cron 등 별도
+  // 스케줄러 + 자체 API 키 인증으로 새로 구현해야 한다.
   async getUserInfoWithJwt(
-    jwtToken: string
+    _jwtToken: string
   ): Promise<GetUserInfoWithJwtResponse> {
-    const payload: GetUserInfoWithJwtRequest = {
-      jwtToken,
-      projectId: ENV.appId,
-    };
-
-    const { data } = await this.client.post<GetUserInfoWithJwtResponse>(
-      GET_USER_INFO_WITH_JWT_PATH,
-      payload
+    throw new Error(
+      "getUserInfoWithJwt is Manus-specific (scheduled task auth) and is not available after migration."
     );
-
-    const loginMethod = this.deriveLoginMethod(
-      (data as any)?.platforms,
-      (data as any)?.platform ?? data.platform ?? null
-    );
-    return {
-      ...(data as any),
-      platform: loginMethod,
-      loginMethod,
-    } as GetUserInfoWithJwtResponse;
   }
 
   async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
@@ -279,18 +294,17 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
-    // If user not in DB, sync from OAuth server automatically
+    // If user not in DB, sync from the (already-verified, locally-signed) session
+    // JWT itself — it already carries openId/name from the original Google login,
+    // so no extra network call to an external auth server is needed.
     if (!user) {
       try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+          openId: session.openId,
+          name: session.name || null,
           lastSignedIn: signedInAt,
         });
-        user = await db.getUserByOpenId(userInfo.openId);
+        user = await db.getUserByOpenId(session.openId);
       } catch (error) {
         console.error("[Auth] Failed to sync user from OAuth:", error);
         throw ForbiddenError("Failed to sync user info");
